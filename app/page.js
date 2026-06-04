@@ -124,6 +124,7 @@ export default function Home() {
   const [result,setResult] = useState(null);
   const [error,setError] = useState(null);
   const [usedGuides,setUsedGuides] = useState(false);
+  const [guideImages,setGuideImages] = useState([]);
   const fileRef = useRef();
 
   const T = THEME[region];
@@ -153,7 +154,7 @@ export default function Home() {
   };
 
   const doAnalyze = async () => {
-    setAnalyzing(true); setStep(0); setResult(null); setError(null);
+    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]);
     setMood("analyzing"); setMsg(rnd(MSGS.analyzing));
     let s=0;
     const timer=setInterval(()=>{ s=Math.min(s+1,STEPS.length-1); setStep(s); },700);
@@ -182,6 +183,7 @@ export default function Home() {
       if (!text) throw new Error("응답이 비어있어요.");
       clearInterval(timer); setStep(STEPS.length-1);
       setUsedGuides(data.usedGuides || false);
+      setGuideImages(data.guideImages || []);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
       clearInterval(timer); setError(e.message); setAnalyzing(false); setMood("idle"); setMsg(rnd(MSGS.idle));
@@ -494,6 +496,24 @@ export default function Home() {
               </div>
               <div style={{padding:"14px 16px"}}>
                 <p style={{margin:0,fontSize:"12px",color:"#dde8e4",lineHeight:"2",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>{result}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── 참고 공략 이미지 ── */}
+          {guideImages.length > 0 && (
+            <div style={{marginTop:"12px",background:"rgba(0,0,0,0.5)",border:"1px solid "+T.accentBd,clipPath:CP16,overflow:"hidden",backdropFilter:"blur(8px)"}}>
+              <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.accentBd}}>
+                <span style={{fontSize:"8px",color:T.accent,letterSpacing:"0.12em"}}>// 참고 공략 이미지</span>
+              </div>
+              <div style={{padding:"10px 14px",display:"flex",gap:"10px",flexWrap:"wrap"}}>
+                {guideImages.map((g,i)=>(
+                  <div key={i} style={{flex:"1 1 140px"}}>
+                    <img src={g.image_url} alt={g.title}
+                      style={{width:"100%",height:"120px",objectFit:"cover",border:"1px solid "+T.accentBd,display:"block"}}/>
+                    <div style={{fontSize:"9px",color:T.sub,marginTop:"4px",letterSpacing:"0.04em"}}>{g.title}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

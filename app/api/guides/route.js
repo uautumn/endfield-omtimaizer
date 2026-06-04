@@ -1,15 +1,69 @@
 import { supabase } from "@/lib/supabase";
 
-// 공략글 등록
+// 공략글 등록 (이미지 포함)
 export async function POST(req) {
   try {
-    const { title, region, content, author } = await req.json();
+    const { title, region, content, author, imageData, imageType } = await req.json();
 
     if (!title || !content) {
       return Response.json({ error: "제목과 내용은 필수예요." }, { status: 400 });
     }
 
-    // 1. OpenAI Embeddings API로 벡터 생성
+    let imageUrl = null;
+    let imageAnalysis = "";
+
+    // 1. 이미지가 있으면 Claude Vision으로 분석
+    if (imageData && imageType) {
+      const visionRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5",
+          max_tokens: 1024,
+          messages: [{
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: { type: "base64", media_type: imageType, data: imageData }
+              },
+              {
+                type: "text",
+                text: "이 엔드필드 공장 배치 이미지를 분석해서 한국어로 설명해줘. 설비 배치, 컨베이어 연결, 생산 라인 구성을 구체적으로 설명해줘. 400자 이내로."
+              }
+            ]
+          }]
+        })
+      });
+
+      const visionData = await visionRes.json();
+      if (visionRes.ok) {
+        imageAnalysis = visionData.content?.find(b => b.type === "text")?.text || "";
+      }
+
+      // 2. Supabase Storage에 이미지 저장
+      const fileName = `guides/${Date.now()}.${imageType.split("/")[1]}`;
+      const imageBuffer = Buffer.from(imageData, "base64");
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("guide-images")
+        .upload(fileName, imageBuffer, { contentType: imageType });
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from("guide-images")
+          .getPublicUrl(fileName);
+        imageUrl = urlData.publicUrl;
+      }
+    }
+
+    // 3. 임베딩 생성 (텍스트 + 이미지 분석 합쳐서)
+    const embedInput = `${title}\n${content}${imageAnalysis ? "\n[이미지 분석]\n" + imageAnalysis : ""}`;
+
     const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -18,7 +72,7 @@ export async function POST(req) {
       },
       body: JSON.stringify({
         model: "text-embedding-3-small",
-        input: `${title}\n${content}`,
+        input: embedInput,
       }),
     });
 
@@ -26,17 +80,18 @@ export async function POST(req) {
     if (!embedRes.ok) throw new Error(embedData.error?.message || "임베딩 실패");
     const embedding = embedData.data[0].embedding;
 
-    // 2. Supabase에 저장
+    // 4. Supabase DB에 저장
     const { data, error } = await supabase
       .from("guides")
       .insert({
         title,
         region: region || "공통",
-        content,
+        content: content + (imageAnalysis ? "\n\n[AI 이미지 분석]\n" + imageAnalysis : ""),
         author: author || "익명",
+        image_url: imageUrl,
         embedding,
       })
-      .select("id, title, region, author, created_at")
+      .select("id, title, region, author, created_at, image_url")
       .single();
 
     if (error) throw new Error(error.message);
@@ -55,7 +110,7 @@ export async function GET(req) {
 
     let query = supabase
       .from("guides")
-      .select("id, title, region, author, created_at, content")
+      .select("id, title, region, author, created_at, content, image_url")
       .order("created_at", { ascending: false })
       .limit(50);
 

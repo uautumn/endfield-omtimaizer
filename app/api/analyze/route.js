@@ -6,6 +6,7 @@ export async function POST(req) {
 
     // 1. 관련 공략글 검색 (searchQuery 있을 때만)
     let guideContext = "";
+    let guideImages = [];
     if (searchQuery) {
       try {
         const searchRes = await fetch(
@@ -28,6 +29,10 @@ export async function POST(req) {
               )
               .join("\n\n") +
             "\n--- 공략 끝 ---\n";
+          // 이미지 URL 목록도 저장
+          guideImages = searchData.results
+            .filter(g => g.image_url)
+            .map(g => ({ title: g.title, image_url: g.image_url }));
         }
       } catch (e) {
         // 검색 실패해도 분석은 계속 진행
@@ -68,6 +73,7 @@ export async function POST(req) {
     return Response.json({
       ...data,
       usedGuides: guideContext ? true : false,
+      guideImages,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
