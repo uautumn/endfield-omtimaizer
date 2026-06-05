@@ -205,10 +205,10 @@ export default function Home() {
         <div style={{padding:"8px 12px 6px",display:"flex",alignItems:"center",gap:"8px"}}>
           <div style={{flex:1}}>
             <div style={{fontSize:"8px",color:T.dim,letterSpacing:"0.15em",marginBottom:"1px"}}>{isCore?"// PROTOCOL CORE":"// OUTPOST"}</div>
-            <div style={{fontSize:"12px",color:isCore?T.accent:T.text,fontWeight:"600"}}>{title}</div>
+            <div style={{fontSize:"15px",color:isCore?T.accent:T.text,fontWeight:"600"}}>{title}</div>
           </div>
           <div style={{textAlign:"right",marginRight:"6px"}}>
-            <div style={{fontSize:"16px",fontWeight:"bold",color:p===100?"#4ecb80":T.accent,lineHeight:1}}>{p===100?"✓":done}</div>
+            <div style={{fontSize:"18px",fontWeight:"bold",color:p===100?"#4ecb80":T.accent,lineHeight:1}}>{p===100?"✓":done}</div>
             <div style={{fontSize:"8px",color:T.sub}}>/ {total}</div>
           </div>
           <button onClick={toggleAll} style={{fontSize:"9px",padding:"3px 8px",background:"transparent",border:"1px solid "+(allChecked?T.accent+"88":T.accentBd),color:allChecked?T.accent:T.sub,cursor:"pointer",fontFamily:"monospace",letterSpacing:"0.06em",clipPath:"polygon(0 0,calc(100%-4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100%-4px))"}}>
@@ -220,12 +220,12 @@ export default function Home() {
         </div>
         <div style={{padding:"0 10px 6px"}}>
           {items.map(u=>(
-            <div key={u.id} onClick={()=>toggle(u.id)} style={{display:"flex",alignItems:"center",gap:"10px",padding:"5px 2px",cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,0.05)",userSelect:"none"}}>
-              <div style={{width:"14px",height:"14px",flexShrink:0,position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <div style={{width:"10px",height:"10px",border:"1px solid "+(checks[u.id]?T.accent:T.sub),background:checks[u.id]?T.accentDim:"transparent",transform:"rotate(45deg)",transition:"all 0.15s"}}/>
+            <div key={u.id} onClick={()=>toggle(u.id)} style={{display:"flex",alignItems:"center",gap:"10px",padding:"7px 2px",cursor:"pointer",borderBottom:"1px solid rgba(255,255,255,0.05)",userSelect:"none"}}>
+              <div style={{width:"16px",height:"16px",flexShrink:0,position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{width:"12px",height:"12px",border:"1px solid "+(checks[u.id]?T.accent:T.sub),background:checks[u.id]?T.accentDim:"transparent",transform:"rotate(45deg)",transition:"all 0.15s"}}/>
                 {checks[u.id]&&<div style={{position:"absolute",width:"5px",height:"5px",background:T.accent,transform:"rotate(45deg)",boxShadow:"0 0 4px "+T.accent}}/>}
               </div>
-              <span style={{fontSize:"11px",color:checks[u.id]?"rgba(255,255,255,0.2)":T.text,textDecoration:checks[u.id]?"line-through":"none",fontFamily:"monospace",transition:"all 0.15s"}}>{u.label}</span>
+              <span style={{fontSize:"14px",color:checks[u.id]?"rgba(255,255,255,0.2)":T.text,textDecoration:checks[u.id]?"line-through":"none",fontFamily:"monospace",transition:"all 0.15s"}}>{u.label}</span>
             </div>
           ))}
         </div>
@@ -257,7 +257,7 @@ export default function Home() {
         <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px)"}}/>
       </div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:"540px",margin:"0 auto",padding:"0 0 48px"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:"880px",margin:"0 auto",padding:"0 0 64px"}}>
 
         {/* ── 펠리카 헤더 — 퍼스널 컬러 (전기/옐로) ── */}
         <div style={{padding:"28px 20px 20px",borderBottom:"1px solid "+T.accentBd,marginBottom:"16px",position:"relative",overflow:"hidden"}}>
@@ -294,7 +294,7 @@ export default function Home() {
               {/* 펠리카 이미지 */}
               <div style={{flexShrink:0,position:"relative"}}>
                 {/* 이미지 배경 박스 — 사진의 검정 아이콘 박스 참고 */}
-                <div style={{width:"82px",height:"82px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(232,216,0,0.6)",overflow:"hidden",clipPath:"polygon(0 0,calc(100%-10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100%-10px))",boxShadow:"0 0 16px rgba(232,216,0,0.2)"}}>
+                <div style={{width:"100px",height:"100px",background:"rgba(0,0,0,0.7)",border:"1px solid rgba(232,216,0,0.6)",overflow:"hidden",clipPath:"polygon(0 0,calc(100%-10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100%-10px))",boxShadow:"0 0 16px rgba(232,216,0,0.2)"}}>
                   <img src={"data:image/"+(mood==="analyzing"?"jpeg":(mood==="done"||mood==="result"?"jpeg":"png"))+";base64,"+(FI[mood]||FI.idle)} alt="펠리카" style={{width:"100%",height:"100%",objectFit:"cover",filter:mood==="analyzing"?"brightness(1.1) saturate(1.2)":"none"}}/>
                   {/* 전기 속성 글로우 오버레이 */}
                   <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(232,216,0,0.08),transparent,rgba(232,216,0,0.05))"}}/>
@@ -311,13 +311,13 @@ export default function Home() {
               <div style={{flex:1}}>
                 {/* 네임플레이트 — 사진의 흰 박스 스타일 */}
                 <div style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(232,216,0,0.35)",padding:"7px 12px",clipPath:"polygon(0 0,calc(100%-8px) 0,100% 8px,100% 100%,0 100%)",marginBottom:"8px",backdropFilter:"blur(6px)"}}>
-                  <div style={{fontSize:"16px",fontWeight:"bold",color:"#FFFFFF",letterSpacing:"0.1em",lineHeight:1.2,textShadow:"0 0 20px rgba(232,216,0,0.4)"}}>PERLICA</div>
-                  <div style={{fontSize:"11px",color:"rgba(232,216,0,0.8)",letterSpacing:"0.08em",marginTop:"2px"}}>[ 펠리카 ]</div>
+                  <div style={{fontSize:"20px",fontWeight:"bold",color:"#FFFFFF",letterSpacing:"0.1em",lineHeight:1.2,textShadow:"0 0 20px rgba(232,216,0,0.4)"}}>PERLICA</div>
+                  <div style={{fontSize:"13px",color:"rgba(232,216,0,0.8)",letterSpacing:"0.08em",marginTop:"2px"}}>[ 펠리카 ]</div>
                 </div>
                 {/* 메시지 */}
                 <div style={{background:"rgba(0,0,0,0.5)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 12px",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)",backdropFilter:"blur(8px)"}}>
                   <div style={{fontSize:"8px",color:"rgba(232,216,0,0.5)",letterSpacing:"0.12em",marginBottom:"3px"}}>FELICA — MSG_INCOMING</div>
-                  <p suppressHydrationWarning style={{margin:0,fontSize:"12px",color:"#f0ede8",lineHeight:"1.7",minHeight:"20px"}}>
+                  <p suppressHydrationWarning style={{margin:0,fontSize:"14px",color:"#f0ede8",lineHeight:"1.8",minHeight:"20px"}}>
                     {mounted ? msg : ""}
                   </p>
                 </div>
@@ -340,7 +340,7 @@ export default function Home() {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:"5px"}}>
                 <span style={{fontSize:"8px",color:"rgba(232,216,0,0.5)",letterSpacing:"0.15em"}}>AIC UPGRADE STATUS</span>
                 <div style={{display:"flex",alignItems:"baseline",gap:"2px"}}>
-                  <span style={{fontSize:"24px",fontWeight:"bold",color:pct===100?"#4ecb80":"#E8D800",textShadow:"0 0 12px rgba(232,216,0,0.6)"}}>{pct}</span>
+                  <span style={{fontSize:"30px",fontWeight:"bold",color:pct===100?"#4ecb80":"#E8D800",textShadow:"0 0 12px rgba(232,216,0,0.6)"}}>{pct}</span>
                   <span style={{fontSize:"10px",color:"rgba(232,216,0,0.5)"}}>%</span>
                 </div>
               </div>
@@ -350,20 +350,20 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div style={{padding:"0 16px"}}>
+        <div style={{padding:"0 24px"}}>
 
           {/* ── 지역 탭 ── */}
           <div style={{display:"flex",gap:"0",marginBottom:"12px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
             {Object.entries(THEME).map(([rname,th])=>(
               <button key={rname} onClick={()=>setRegion(rname)}
-                style={{flex:1,padding:"8px 8px 10px",border:"none",
+                style={{flex:1,padding:"11px 8px 13px",border:"none",
                   borderBottom:"2px solid "+(region===rname?th.accent:"transparent"),
                   background:"transparent",
                   color:region===rname?th.accent:th.sub,
-                  fontSize:"11px",fontWeight:region===rname?"bold":"normal",
+                  fontSize:"15px",fontWeight:region===rname?"bold":"normal",
                   cursor:"pointer",fontFamily:"monospace",letterSpacing:"0.06em",
                   transition:"all 0.25s",marginBottom:"-1px"}}>
-                <div style={{fontSize:"7px",letterSpacing:"0.14em",marginBottom:"2px",color:region===rname?th.accent2:"rgba(255,255,255,0.15)"}}>{th.sub_en}</div>
+                <div style={{fontSize:"8px",letterSpacing:"0.14em",marginBottom:"3px",color:region===rname?th.accent2:"rgba(255,255,255,0.15)"}}>{th.sub_en}</div>
                 {th.icon} {rname}
               </button>
             ))}
@@ -384,7 +384,7 @@ export default function Home() {
               <div>
                 <div style={{fontSize:"8px",color:T.sub,letterSpacing:"0.2em",marginBottom:"8px"}}>// FACTORY SCREENSHOT INPUT</div>
                 <div style={{fontSize:"22px",marginBottom:"6px"}}>📷</div>
-                <div style={{fontSize:"11px",color:T.accent,letterSpacing:"0.06em",fontWeight:"bold"}}>공장 스크린샷 업로드</div>
+                <div style={{fontSize:"13px",color:T.accent,letterSpacing:"0.06em",fontWeight:"bold"}}>공장 스크린샷 업로드</div>
                 <div style={{fontSize:"9px",color:T.sub,marginTop:"3px"}}>배치 분석 가능 — 클릭 또는 드래그</div>
               </div>
             ):(
@@ -410,7 +410,7 @@ export default function Home() {
             </div>
             <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
               <button onClick={()=>setLevels(p=>({...p,[region]:Math.max(0,p[region]-1)}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>−</button>
-              <span style={{fontSize:"26px",fontWeight:"bold",color:T.accent,width:"38px",textAlign:"center",textShadow:"0 0 12px "+T.accentGlow}}>{levels[region]}</span>
+              <span style={{fontSize:"32px",fontWeight:"bold",color:T.accent,width:"46px",textAlign:"center",textShadow:"0 0 12px "+T.accentGlow}}>{levels[region]}</span>
               <button onClick={()=>setLevels(p=>({...p,[region]:p[region]+1}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>+</button>
             </div>
           </div>
@@ -452,11 +452,11 @@ export default function Home() {
 
           {/* ── 분석 버튼 ── */}
           <button onClick={doAnalyze} disabled={analyzing}
-            style={{width:"100%",padding:"14px",
+            style={{width:"100%",padding:"17px",
               border:"1px solid "+(analyzing?T.accentBd:T.accent+"99"),
               background:analyzing?"rgba(0,0,0,0.4)":"linear-gradient(135deg,"+T.accentDim+",rgba(0,0,0,0.2))",
               color:analyzing?"rgba(255,255,255,0.2)":T.accent,
-              fontSize:"11px",fontWeight:"bold",cursor:analyzing?"not-allowed":"pointer",
+              fontSize:"16px",fontWeight:"bold",cursor:analyzing?"not-allowed":"pointer",
               fontFamily:"monospace",letterSpacing:"0.18em",
               clipPath:CP16,
               boxShadow:analyzing?"none":"0 0 24px "+T.accentDim,
