@@ -11,6 +11,16 @@ export async function POST(req) {
 
     let imageUrl = null;
     let imageAnalysis = "";
+    let urlContent = "";
+
+    // 0. URL이 있으면 내용 스크래핑
+    if (sourceUrl && sourceUrl.trim()) {
+      try {
+        urlContent = await scrapeUrl(sourceUrl.trim());
+      } catch (e) {
+        console.error("URL 스크래핑 실패:", e.message);
+      }
+    }
 
     // 1. 이미지가 있으면 Claude Vision으로 분석
     if (imageData && imageType) {
@@ -62,7 +72,7 @@ export async function POST(req) {
     }
 
     // 3. 임베딩 생성 (텍스트 + 이미지 분석 합쳐서)
-    const embedInput = `${title}\n${content}${imageAnalysis ? "\n[이미지 분석]\n" + imageAnalysis : ""}`;
+    const embedInput = `${title}\n${content}${urlContent ? "\n[URL 내용]\n" + urlContent : ""}${imageAnalysis ? "\n[이미지 분석]\n" + imageAnalysis : ""}`;
 
     const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
@@ -86,7 +96,8 @@ export async function POST(req) {
       .insert({
         title,
         region: region || "공통",
-        content: content + (imageAnalysis ? "\n\n[AI 이미지 분석]\n" + imageAnalysis : ""),
+        content: content + (urlContent ? "\n\n[참고 URL 내용]\n" + urlContent : "") + (imageAnalysis ? "\n\n[AI 이미지 분석]\n" + imageAnalysis : ""),
+        source_url: sourceUrl || null,
         author: author || "익명",
         image_url: imageUrl,
         embedding,

@@ -99,7 +99,7 @@ export default function GuidesPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const fileRef = useRef();
 
-  const [form, setForm] = useState({ title: "", region: "공통", author: "", content: "" });
+  const [form, setForm] = useState({ title: "", region: "공통", author: "", content: "", sourceUrl: "" });
   const [image, setImage] = useState(null); // { preview, data, type }
 
   const fetchGuides = async (region) => {
@@ -143,12 +143,13 @@ export default function GuidesPage() {
           ...form,
           imageData: image?.data || null,
           imageType: image?.type || null,
+          sourceUrl: form.sourceUrl || null,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "등록 실패");
       setSuccess(true);
-      setForm({ title: "", region: "공통", author: "", content: "" });
+      setForm({ title: "", region: "공통", author: "", content: "", sourceUrl: "" });
       setImage(null);
       setTimeout(() => { setSuccess(false); setTab("list"); fetchGuides(filterRegion); }, 1500);
     } catch (e) {
@@ -240,6 +241,19 @@ export default function GuidesPage() {
               <input value={form.author} onChange={e => setForm(p => ({ ...p, author: e.target.value }))}
                 placeholder="익명으로 남겨도 돼요"
                 style={inputStyle} />
+            </Field>
+
+            <Field label="공략 출처 URL (선택)">
+              <div style={{ position: "relative" }}>
+                <input value={form.sourceUrl} onChange={e => setForm(p => ({ ...p, sourceUrl: e.target.value }))}
+                  placeholder="https://arca.live/... 또는 https://gall.dcinside.com/..."
+                  style={inputStyle} />
+                {form.sourceUrl && (
+                  <div style={{ fontSize: "9px", color: "#1ec8a0", marginTop: "4px", letterSpacing: "0.05em" }}>
+                    ✦ 등록 시 URL 내용을 자동으로 스크래핑해서 AI 학습에 활용해요
+                  </div>
+                )}
+              </div>
             </Field>
 
             {/* 이미지 업로드 */}
