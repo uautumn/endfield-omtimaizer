@@ -10,7 +10,7 @@ async function fetchWithScraper(url, json = false) {
   return json ? await res.json() : await res.text();
 }
 
-// 텍스트 파싱
+// HTML → 텍스트 파싱
 function parseHTML(html) {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -63,106 +63,160 @@ async function saveChunks(chunks, sourceName, region) {
         embedding,
       });
       count++;
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 120));
     } catch (e) { console.error(`청크 ${i} 실패:`, e.message); }
   }
   return count;
 }
 
-// ── 크롤러들 ────────────────────────────────────────────
+// ── 위키 크롤링 ──────────────────────────────────────────
+const WIKI_SOURCES = [
+  // 나무위키 — URL 인코딩 처리
+  {
+    name: "나무위키 — AIC 공업 시스템",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EA%B3%B5%EC%97%85",
+    region: "공통",
+  },
+  {
+    name: "나무위키 — 거점 시스템",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EA%B1%B0%EC%A0%90",
+    region: "공통",
+  },
+  {
+    name: "나무위키 — 4번 협곡",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F4%EB%B2%88%20%ED%98%91%EA%B3%A1",
+    region: "4번 협곡",
+  },
+  {
+    name: "나무위키 — 무릉",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EB%AC%B4%EB%A6%89",
+    region: "무릉",
+  },
+  // wiki.gg — Fandom보다 안정적
+  {
+    name: "wiki.gg — Factory",
+    url: "https://endfield.wiki.gg/wiki/Factory",
+    region: "공통",
+  },
+  {
+    name: "wiki.gg — Base Building",
+    url: "https://endfield.wiki.gg/wiki/Base_Building",
+    region: "공통",
+  },
+  {
+    name: "wiki.gg — Outpost",
+    url: "https://endfield.wiki.gg/wiki/Outpost",
+    region: "공통",
+  },
+  {
+    name: "wiki.gg — Conveyor",
+    url: "https://endfield.wiki.gg/wiki/Conveyor_Belt",
+    region: "공통",
+  },
+];
 
-// 위키 크롤링 (나무위키, Fandom)
 async function crawlWiki(source) {
   const html = await fetchWithScraper(source.url);
   const text = parseHTML(html);
   if (text.length < 100) throw new Error("콘텐츠 부족");
-  const chunks = chunkText(text);
-  return await saveChunks(chunks, source.name, source.region);
+  return await saveChunks(chunkText(text), source.name, source.region);
 }
 
-// Reddit 크롤링 (JSON API)
-async function crawlReddit(subreddit, region = "공통") {
+// ── Reddit 크롤링 ────────────────────────────────────────
+async function crawlReddit(subreddit) {
   const sourceName = `Reddit r/${subreddit}`;
-  const url = `https://www.reddit.com/r/${subreddit}/top.json?t=month&limit=25`;
-  const data = await fetchWithScraper(url, true);
-  const posts = data?.data?.children || [];
+  // JSON 직접 요청
+  const url = `https://www.reddit.com/r/${subreddit}/top.json?t=month&limit=25&raw_json=1`;
+  const html = await fetchWithScraper(url);
+
+  let posts = [];
+  try {
+    const data = JSON.parse(html);
+    posts = data?.data?.children || [];
+  } catch (e) {
+    throw new Error("Reddit JSON 파싱 실패");
+  }
 
   const chunks = [];
   for (const post of posts) {
     const d = post.data;
-    // 공략성 글만 필터 (업보트 50 이상, 셀프 포스트)
-    if (d.score < 50 || !d.selftext || d.selftext.length < 100) continue;
-    const text = `[제목] ${d.title}\n[내용] ${d.selftext}\n[업보트] ${d.score}`;
-    chunks.push(...chunkText(text));
+    if (!d || d.score < 30) continue;
+    const text = `[제목] ${d.title || ""}\n[내용] ${d.selftext || d.url || ""}\n[업보트] ${d.score}`;
+    if (text.length > 100) chunks.push(...chunkText(text));
   }
 
-  if (chunks.length === 0) throw new Error("유효한 공략 게시물 없음");
-  return await saveChunks(chunks, sourceName, region);
+  if (chunks.length === 0) throw new Error("유효한 게시물 없음");
+  return await saveChunks(chunks, sourceName, "공통");
 }
 
-// 아카라이브 크롤링
-async function crawlArcalive(channel = "endfield") {
+// ── 아카라이브 크롤링 ────────────────────────────────────
+async function crawlArcalive(channel) {
   const sourceName = `아카라이브 ${channel}`;
-  const url = `https://arca.live/b/${channel}?sort=recommend`;
+  const url = `https://arca.live/b/${channel}?sort=recommend&p=1`;
   const html = await fetchWithScraper(url);
   const text = parseHTML(html);
   if (text.length < 100) throw new Error("콘텐츠 부족");
 
-  // 개별 글 링크 파싱
-  const linkPattern = /\/b\/[^"'\s]+\/\d+/g;
-  const links = [...new Set(html.match(linkPattern) || [])].slice(0, 10);
+  const chunks = chunkText(text);
 
-  const chunks = [text]; // 목록 페이지 텍스트
+  // 개별 글 링크 추출해서 추가 수집
+  const matches = html.match(/href="\/b\/[^"]+\/\d+"/g) || [];
+  const links = [...new Set(matches.map(m => m.replace(/href="|"/g, "")))].slice(0, 8);
+
   for (const link of links) {
     try {
       const postHtml = await fetchWithScraper(`https://arca.live${link}`);
       const postText = parseHTML(postHtml);
       if (postText.length > 200) chunks.push(...chunkText(postText));
-      await new Promise(r => setTimeout(r, 200));
-    } catch (e) { console.error(`아카라이브 글 실패:`, e.message); }
+      await new Promise(r => setTimeout(r, 300));
+    } catch (e) { /* 실패해도 계속 */ }
   }
 
   return await saveChunks(chunks, sourceName, "공통");
 }
 
-// 디시인사이드 크롤링
-async function crawlDcInside(gallId = "endfield") {
+// ── 디시인사이드 크롤링 ──────────────────────────────────
+async function crawlDcInside(gallId) {
   const sourceName = `디시인사이드 ${gallId}갤`;
-  const url = `https://gall.dcinside.com/board/lists/?id=${gallId}&sort_type=recommend`;
-  const html = await fetchWithScraper(url);
+  // 마이너 갤러리로 시도
+  const urls = [
+    `https://gall.dcinside.com/mgallery/board/lists/?id=${gallId}&sort_type=N&search_head=111`,
+    `https://gall.dcinside.com/board/lists/?id=${gallId}`,
+    `https://m.dcinside.com/board/${gallId}`,
+  ];
+
+  let html = "";
+  let succeeded = false;
+  for (const url of urls) {
+    try {
+      html = await fetchWithScraper(url);
+      if (html.length > 500) { succeeded = true; break; }
+    } catch (e) { continue; }
+  }
+
+  if (!succeeded) throw new Error("디시 접근 실패");
   const text = parseHTML(html);
   if (text.length < 100) throw new Error("콘텐츠 부족");
 
-  // 개별 글 링크 파싱
-  const linkPattern = /\/board\/view\/\?id=[^&"'\s]+&no=\d+/g;
-  const links = [...new Set(html.match(linkPattern) || [])].slice(0, 10);
+  const chunks = chunkText(text);
 
-  const chunks = [text];
+  // 개별 글 링크 추출
+  const matches = html.match(/\/board\/view\/\?[^"'\s]+/g) || [];
+  const links = [...new Set(matches)].slice(0, 8);
+
   for (const link of links) {
     try {
       const postHtml = await fetchWithScraper(`https://gall.dcinside.com${link}`);
       const postText = parseHTML(postHtml);
       if (postText.length > 200) chunks.push(...chunkText(postText));
-      await new Promise(r => setTimeout(r, 200));
-    } catch (e) { console.error(`디시 글 실패:`, e.message); }
+      await new Promise(r => setTimeout(r, 300));
+    } catch (e) { /* 실패해도 계속 */ }
   }
 
   return await saveChunks(chunks, sourceName, "공통");
 }
 
-// ── 크롤 소스 목록 ───────────────────────────────────────
-const WIKI_SOURCES = [
-  { name: "나무위키 — AIC 공업 시스템", url: "https://namu.wiki/w/명일방주: 엔드필드/공업", region: "공통" },
-  { name: "나무위키 — 거점 시스템", url: "https://namu.wiki/w/명일방주: 엔드필드/거점", region: "공통" },
-  { name: "나무위키 — 4번 협곡", url: "https://namu.wiki/w/명일방주: 엔드필드/4번 협곡", region: "4번 협곡" },
-  { name: "나무위키 — 무릉", url: "https://namu.wiki/w/명일방주: 엔드필드/무릉", region: "무릉" },
-  { name: "Fandom — Factory", url: "https://arknights-endfield.fandom.com/wiki/Factory", region: "공통" },
-  { name: "Fandom — Base Building", url: "https://arknights-endfield.fandom.com/wiki/Base_Building", region: "공통" },
-  { name: "Fandom — Valley No.4", url: "https://arknights-endfield.fandom.com/wiki/Valley_No.4", region: "4번 협곡" },
-  { name: "Fandom — Wulong", url: "https://arknights-endfield.fandom.com/wiki/Wulong", region: "무릉" },
-];
-
-// POST — 크롤링 실행
+// ── 메인 크롤링 실행 ─────────────────────────────────────
 export async function POST(req) {
   const { authorization } = Object.fromEntries(req.headers);
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
@@ -171,7 +225,7 @@ export async function POST(req) {
 
   const results = { success: [], failed: [], total: 0 };
 
-  // 1. 위키 크롤링
+  // 위키
   for (const source of WIKI_SOURCES) {
     try {
       const count = await crawlWiki(source);
@@ -182,16 +236,16 @@ export async function POST(req) {
     }
   }
 
-  // 2. Reddit 크롤링
+  // Reddit
   try {
-    const count = await crawlReddit("EndfieldGlobal", "공통");
+    const count = await crawlReddit("EndfieldGlobal");
     results.success.push({ name: "Reddit r/EndfieldGlobal", chunks: count });
     results.total += count;
   } catch (e) {
     results.failed.push({ name: "Reddit r/EndfieldGlobal", error: e.message });
   }
 
-  // 3. 아카라이브 크롤링
+  // 아카라이브
   try {
     const count = await crawlArcalive("endfield");
     results.success.push({ name: "아카라이브 endfield", chunks: count });
@@ -200,7 +254,7 @@ export async function POST(req) {
     results.failed.push({ name: "아카라이브 endfield", error: e.message });
   }
 
-  // 4. 디시인사이드 크롤링
+  // 디시인사이드
   try {
     const count = await crawlDcInside("endfield");
     results.success.push({ name: "디시인사이드 endfield갤", chunks: count });
@@ -215,7 +269,7 @@ export async function POST(req) {
   });
 }
 
-// GET — 크롤 상태 조회
+// GET — 상태 조회
 export async function GET(req) {
   const { authorization } = Object.fromEntries(req.headers);
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
@@ -235,5 +289,9 @@ export async function GET(req) {
     return acc;
   }, {});
 
-  return Response.json({ total: data.length, sources: summary, lastCrawled: data[0]?.created_at || null });
+  return Response.json({
+    total: data.length,
+    sources: summary,
+    lastCrawled: data[0]?.created_at || null,
+  });
 }
