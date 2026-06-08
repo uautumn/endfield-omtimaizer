@@ -92,28 +92,14 @@ const WIKI_SOURCES = [
     url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EB%AC%B4%EB%A6%89",
     region: "무릉",
   },
-  // wiki.gg — Fandom보다 안정적
-  {
-    name: "wiki.gg — Factory",
-    url: "https://endfield.wiki.gg/wiki/Factory",
-    region: "공통",
-  },
-  {
-    name: "wiki.gg — Base Building",
-    url: "https://endfield.wiki.gg/wiki/Base_Building",
-    region: "공통",
-  },
-  {
-    name: "wiki.gg — Outpost",
-    url: "https://endfield.wiki.gg/wiki/Outpost",
-    region: "공통",
-  },
-  {
-    name: "wiki.gg — Conveyor",
-    url: "https://endfield.wiki.gg/wiki/Conveyor_Belt",
-    region: "공통",
-  },
 ];
+
+// wiki.gg AIC 페이지 — 하위 링크까지 자동 수집
+const WIKIGG_ROOT = {
+  name: "wiki.gg — AIC",
+  url: "https://endfield.wiki.gg/wiki/Automated_Industry_Complex",
+  region: "공통",
+};
 
 async function crawlWiki(source) {
   const html = await fetchWithScraper(source.url);
@@ -122,19 +108,58 @@ async function crawlWiki(source) {
   return await saveChunks(chunkText(text), source.name, source.region);
 }
 
+// wiki.gg 메인 페이지 + 하위 링크 자동 수집
+async function crawlWikiDeep(root) {
+  const html = await fetchWithScraper(root.url);
+  const mainText = parseHTML(html);
+  if (mainText.length < 100) throw new Error("콘텐츠 부족");
+
+  const chunks = chunkText(mainText);
+
+  // 본문 안의 /wiki/ 링크 추출 (특수 페이지 제외)
+  const matches = html.match(/\/wiki\/[A-Za-z0-9_()%]+/g) || [];
+  const exclude = ["File:", "Category:", "Template:", "Help:", "Special:", "User:", "Talk:", "Main_Page"];
+  const links = [...new Set(matches)]
+    .filter(l => !exclude.some(e => l.includes(e)))
+    .filter(l => l !== "/wiki/Automated_Industry_Complex")
+    .slice(0, 12);
+
+  for (const link of links) {
+    try {
+      const subHtml = await fetchWithScraper(`https://endfield.wiki.gg${link}`);
+      const subText = parseHTML(subHtml);
+      if (subText.length > 200) chunks.push(...chunkText(subText));
+      await new Promise(r => setTimeout(r, 250));
+    } catch (e) { /* 실패해도 계속 */ }
+  }
+
+  return await saveChunks(chunks, root.name, root.region);
+}
+
 // ── Reddit 크롤링 ────────────────────────────────────────
 async function crawlReddit(subreddit) {
   const sourceName = `Reddit r/${subreddit}`;
-  // JSON 직접 요청
   const url = `https://www.reddit.com/r/${subreddit}/top.json?t=month&limit=25&raw_json=1`;
-  const html = await fetchWithScraper(url);
 
   let posts = [];
   try {
-    const data = JSON.parse(html);
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "web:endfield-optimizer:v1.0 (by /u/uautumn)",
+        "Accept": "application/json",
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     posts = data?.data?.children || [];
   } catch (e) {
-    throw new Error("Reddit JSON 파싱 실패");
+    try {
+      const html = await fetchWithScraper(url);
+      const data = JSON.parse(html);
+      posts = data?.data?.children || [];
+    } catch (e2) {
+      throw new Error("Reddit 접근 실패: " + e.message);
+    }
   }
 
   const chunks = [];
@@ -180,8 +205,7 @@ async function crawlDcInside(gallId) {
   const sourceName = `디시인사이드 ${gallId}갤`;
   // 마이너 갤러리로 시도
   const urls = [
-    `https://gall.dcinside.com/mgallery/board/lists/?id=${gallId}&sort_type=N&search_head=111`,
-    `https://gall.dcinside.com/board/lists/?id=${gallId}`,
+    `https://gall.dcinside.com/mgallery/board/lists/?id=${gallId}&sort_type=N`,
     `https://m.dcinside.com/board/${gallId}`,
   ];
 
@@ -201,7 +225,7 @@ async function crawlDcInside(gallId) {
   const chunks = chunkText(text);
 
   // 개별 글 링크 추출
-  const matches = html.match(/\/board\/view\/\?[^"'\s]+/g) || [];
+  const matches = html.match(/\/(mgallery\/)?board\/view\/\?[^"'\s]+/g) || [];
   const links = [...new Set(matches)].slice(0, 8);
 
   for (const link of links) {
@@ -225,7 +249,7 @@ export async function POST(req) {
 
   const results = { success: [], failed: [], total: 0 };
 
-  // 위키
+  // 나무위키
   for (const source of WIKI_SOURCES) {
     try {
       const count = await crawlWiki(source);
@@ -234,6 +258,15 @@ export async function POST(req) {
     } catch (e) {
       results.failed.push({ name: source.name, error: e.message });
     }
+  }
+
+  // wiki.gg AIC — 하위 페이지까지 자동 수집
+  try {
+    const count = await crawlWikiDeep(WIKIGG_ROOT);
+    results.success.push({ name: WIKIGG_ROOT.name + " (하위 포함)", chunks: count });
+    results.total += count;
+  } catch (e) {
+    results.failed.push({ name: WIKIGG_ROOT.name, error: e.message });
   }
 
   // Reddit
@@ -247,11 +280,11 @@ export async function POST(req) {
 
   // 아카라이브
   try {
-    const count = await crawlArcalive("endfield");
-    results.success.push({ name: "아카라이브 endfield", chunks: count });
+    const count = await crawlArcalive("akendfield");
+    results.success.push({ name: "아카라이브 akendfield", chunks: count });
     results.total += count;
   } catch (e) {
-    results.failed.push({ name: "아카라이브 endfield", error: e.message });
+    results.failed.push({ name: "아카라이브 akendfield", error: e.message });
   }
 
   // 디시인사이드
