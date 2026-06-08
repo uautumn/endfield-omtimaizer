@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 // 공략글 등록 (이미지 포함)
 export async function POST(req) {
   try {
-    const { title, region, content, author, imageData, imageType } = await req.json();
+    const { title, region, content, author, imageData, imageType, sourceUrl } = await req.json();
 
     if (!title || !content) {
       return Response.json({ error: "제목과 내용은 필수예요." }, { status: 400 });

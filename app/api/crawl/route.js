@@ -189,15 +189,43 @@ async function processQueue(limit = 3) {
 // ── API 핸들러 ────────────────────────────────────────────
 
 export async function POST(req) {
-  const authorization = req.headers.get("authorization") || "";
-  if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
+  // GET은 헤더 인증만 지원
+  let body = {};
+  try { body = await req.json(); } catch (_) {}
+
+  // 헤더 또는 body._secret 둘 다 지원
+  const authHeader = req.headers.get("authorization") || "";
+  const authBody = body._secret ? `Bearer ${body._secret}` : "";
+  const auth = authHeader || authBody;
+  if (auth !== `Bearer ${process.env.CRAWL_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body = {};
-  try { body = await req.json(); } catch (_) {}
-  const action = body.action || "collect"; // collect | process
+  const action = body.action || "collect";
   const source = body.source || "all";
+
+  // 상태 조회
+  if (action === "status") {
+    const [queueRes, guidesRes] = await Promise.all([
+      supabase.from("crawl_queue").select("status").then(({ data }) => {
+        const counts = { pending: 0, done: 0, failed: 0 };
+        data?.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+        return counts;
+      }),
+      supabase.from("guides")
+        .select("author, created_at")
+        .like("author", "[자동수집]%")
+        .order("created_at", { ascending: false }),
+    ]);
+    const summary = {};
+    guidesRes.data?.forEach(g => { summary[g.author] = (summary[g.author] || 0) + 1; });
+    return Response.json({
+      total: guidesRes.data?.length || 0,
+      sources: summary,
+      lastCrawled: guidesRes.data?.[0]?.created_at || null,
+      queue: queueRes,
+    });
+  }
 
   // 2단계: 본문 처리
   if (action === "process") {
@@ -247,6 +275,7 @@ export async function POST(req) {
 
 // GET: 상태 조회
 export async function GET(req) {
+  // GET은 헤더 인증만 지원
   const authorization = req.headers.get("authorization") || "";
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

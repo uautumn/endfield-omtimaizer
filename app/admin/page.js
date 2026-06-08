@@ -31,8 +31,8 @@ export default function AdminPage() {
   const call = async (body) => {
     const res = await fetch("/api/crawl", {
       method: "POST",
-      headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, _secret: secret }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "실패");
@@ -41,9 +41,13 @@ export default function AdminPage() {
 
   const fetchStatus = async (sk = secret) => {
     try {
-      const res = await fetch("/api/crawl", { headers: { Authorization: `Bearer ${sk}` } });
+      const res = await fetch("/api/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status", _secret: sk }),
+      });
       const data = await res.json();
-      if (res.ok) { setStatus(data); setAuthed(true); setError(null); }
+      if (res.ok && !data.error) { setStatus(data); setAuthed(true); setError(null); }
       else setError(data.error || "인증 실패");
     } catch (e) { setError("연결 실패: " + e.message); }
   };
