@@ -3,8 +3,9 @@ import { supabase } from "@/lib/supabase";
 const SCRAPER_BASE = "https://api.scraperapi.com";
 
 // ScraperAPI로 페이지 fetch
-async function fetchWithScraper(url, json = false) {
-  const scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=false`;
+async function fetchWithScraper(url, json = false, render = true) {
+  const renderParam = render ? "true" : "false";
+  const scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=${renderParam}`;
   const res = await fetch(scraperUrl);
   if (!res.ok) throw new Error(`ScraperAPI HTTP ${res.status}`);
   return json ? await res.json() : await res.text();
@@ -79,18 +80,23 @@ const WIKI_SOURCES = [
   },
   {
     name: "나무위키 — 거점 시스템",
-    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EA%B1%B0%EC%A0%90",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C/%EA%B1%B0%EC%A0%90",
     region: "공통",
   },
   {
     name: "나무위키 — 4번 협곡",
-    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F4%EB%B2%88%20%ED%98%91%EA%B3%A1",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C/4%EB%B2%88%20%ED%98%91%EA%B3%A1",
     region: "4번 협곡",
   },
   {
     name: "나무위키 — 무릉",
-    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C%2F%EB%AC%B4%EB%A6%89",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C/%EB%AC%B4%EB%A6%89",
     region: "무릉",
+  },
+  {
+    name: "나무위키 — 엔드필드 메인",
+    url: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C",
+    region: "공통",
   },
 ];
 
@@ -269,14 +275,14 @@ export async function POST(req) {
     results.failed.push({ name: WIKIGG_ROOT.name, error: e.message });
   }
 
-  // Reddit
-  try {
-    const count = await crawlReddit("EndfieldGlobal");
-    results.success.push({ name: "Reddit r/EndfieldGlobal", chunks: count });
-    results.total += count;
-  } catch (e) {
-    results.failed.push({ name: "Reddit r/EndfieldGlobal", error: e.message });
-  }
+  // Reddit — API 키 필요, 현재 비활성화
+  // try {
+  //   const count = await crawlReddit("EndfieldGlobal");
+  //   results.success.push({ name: "Reddit r/EndfieldGlobal", chunks: count });
+  //   results.total += count;
+  // } catch (e) {
+  //   results.failed.push({ name: "Reddit r/EndfieldGlobal", error: e.message });
+  // }
 
   // 아카라이브
   try {
