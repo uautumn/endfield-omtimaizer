@@ -10,7 +10,7 @@ export async function POST(req) {
     if (searchQuery) {
       try {
         const searchRes = await fetch(
-          new URL("/api/search", req.url).toString(),
+          (req.url.includes("://") ? new URL("/api/search", req.url).toString() : "https://endfield-omtimaizer.vercel.app/api/search"),
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

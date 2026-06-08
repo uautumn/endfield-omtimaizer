@@ -116,7 +116,8 @@ export async function POST(req) {
 // 공략글 목록 조회
 export async function GET(req) {
   try {
-    const { searchParams } = new URL(req.url);
+    const urlStr = req.url.includes("://") ? req.url : `https://endfield-omtimaizer.vercel.app${req.url}`;
+    const { searchParams } = new URL(urlStr);
     const region = searchParams.get("region");
 
     let query = supabase

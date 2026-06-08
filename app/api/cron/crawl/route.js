@@ -8,11 +8,12 @@ export async function GET(req) {
 
   try {
     const res = await fetch(
-      new URL("/api/crawl", req.url).toString(),
+      "https://endfield-omtimaizer.vercel.app/api/crawl",
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.CRAWL_SECRET}`,
+          "Content-Type": "application/json",
         },
       }
     );
