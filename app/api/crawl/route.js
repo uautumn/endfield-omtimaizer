@@ -283,21 +283,14 @@ export async function POST(req) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Vercel에서 req.url이 상대경로일 수 있으므로 안전하게 파싱
+  // body에서 source 읽기 (URL 파라미터 방식 제거)
   let sourceKey = null;
   let debugMode = false;
   try {
-    const baseUrl = "https://endfield-omtimaizer.vercel.app";
-    const parsedUrl = new URL(req.url.startsWith("http") ? req.url : baseUrl + req.url);
-    sourceKey = parsedUrl.searchParams.get("source");
-    debugMode = parsedUrl.searchParams.get("debug") === "true";
-  } catch (e) {
-    // URL 파싱 실패시 body에서 source 읽기 시도
-    try {
-      const body = await req.json().catch(() => ({}));
-      sourceKey = body.source || null;
-    } catch (_) {}
-  }
+    const body = await req.json().catch(() => ({}));
+    sourceKey = body.source || null;
+    debugMode = body.debug === true;
+  } catch (_) {}
 
   const results = { success: [], failed: [], total: 0 };
   if (debugMode && sourceKey) {

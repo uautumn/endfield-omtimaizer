@@ -50,9 +50,13 @@ export default function AdminPage() {
     setSourceResults(prev => ({ ...prev, [sourceKey]: { status: "running" } }));
     setCurrentSource(label);
     try {
-      const res = await fetch(`/api/crawl?source=${sourceKey}`, {
+      const res = await fetch("/api/crawl", {
         method: "POST",
-        headers: { Authorization: `Bearer ${secret}` },
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ source: sourceKey }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "실패");
