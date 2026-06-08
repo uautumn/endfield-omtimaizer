@@ -211,8 +211,8 @@ async function crawlDcInside(gallId) {
   const sourceName = `디시인사이드 ${gallId}갤`;
   // 마이너 갤러리로 시도
   const urls = [
-    `https://gall.dcinside.com/mgallery/board/lists/?id=${gallId}&sort_type=N`,
-    `https://m.dcinside.com/board/${gallId}`,
+    "https://gall.dcinside.com/mgallery/board/lists/?id=" + gallId,
+    "https://m.dcinside.com/board/" + gallId,
   ];
 
   let html = "";
@@ -270,6 +270,32 @@ export async function POST(req) {
 
   const results = { success: [], failed: [], total: 0 };
 
+  // 디버그 모드 — HTML 원본 확인
+  const debugMode = searchParams.get("debug") === "true";
+  if (debugMode && sourceKey) {
+    const urlMap = {
+      namu_aic: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C/%EA%B3%B5%EC%97%85",
+      arcalive: "https://arca.live/b/akendfield?sort=recommend&p=1",
+      dcinside: "https://gall.dcinside.com/mgallery/board/lists/?id=endfield",
+      wikigg:   "https://endfield.wiki.gg/wiki/Automated_Industry_Complex",
+    };
+    const url = urlMap[sourceKey];
+    if (!url) return Response.json({ error: "디버그 불가" }, { status: 400 });
+    try {
+      const html = await fetchWithScraper(url);
+      const text = parseHTML(html);
+      return Response.json({
+        url,
+        htmlLength: html.length,
+        textLength: text.length,
+        textPreview: text.slice(0, 500),
+        htmlPreview: html.slice(0, 500),
+      });
+    } catch (e) {
+      return Response.json({ error: e.message });
+    }
+  }
+
   // 특정 소스만 실행
   if (sourceKey) {
     const fn = SOURCE_MAP[sourceKey];
@@ -281,7 +307,7 @@ export async function POST(req) {
     } catch (e) {
       results.failed.push({ name: sourceKey, error: e.message });
     }
-    return Response.json({ message: `${sourceKey} 크롤링 완료! ${results.total}개 청크 저장`, results, debug: { sourceKey } });
+    return Response.json({ message: `${sourceKey} 크롤링 완료! ${results.total}개 청크 저장`, results });
   }
 
   // 전체 실행 (cron용)
