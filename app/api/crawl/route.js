@@ -125,9 +125,11 @@ async function crawlWikiDeep(root) {
   // 본문 안의 /wiki/ 링크 추출 (특수 페이지 제외)
   const matches = html.match(/\/wiki\/[A-Za-z0-9_()%]+/g) || [];
   const exclude = ["File:", "Category:", "Template:", "Help:", "Special:", "User:", "Talk:", "Main_Page"];
+  const factoryRelated = ["Factory", "Conveyor", "Outpost", "Industry", "Production", "Building", "Base", "AIC", "Automated"];
   const links = [...new Set(matches)]
     .filter(l => !exclude.some(e => l.includes(e)))
     .filter(l => l !== "/wiki/Automated_Industry_Complex")
+    .filter(l => factoryRelated.some(k => l.includes(k)))
     .slice(0, 12);
 
   for (const link of links) {
@@ -180,69 +182,83 @@ async function crawlReddit(subreddit) {
   return await saveChunks(chunks, sourceName, "공통");
 }
 
-// ── 아카라이브 크롤링 ────────────────────────────────────
+// ── 아카라이브 크롤링 (키워드 검색 기반) ────────────────
+const FACTORY_KEYWORDS = ["공장", "AIC", "컨베이어", "생산라인", "설비", "자동화"];
+
 async function crawlArcalive(channel) {
   const sourceName = `아카라이브 ${channel}`;
-  const url = `https://arca.live/b/${channel}?sort=recommend&p=1`;
-  const html = await fetchWithScraper(url);
-  const text = parseHTML(html);
-  if (text.length < 30) throw new Error("아카라이브 콘텐츠 부족 (" + text.length + "자)");
+  const allLinks = new Set();
 
-  const chunks = chunkText(text);
+  // 키워드별 검색 결과에서 링크 수집
+  for (const kw of FACTORY_KEYWORDS) {
+    try {
+      const searchUrl = `https://arca.live/b/${channel}?q=${encodeURIComponent(kw)}&sort=recommend`;
+      const html = await fetchWithScraper(searchUrl);
+      const matches = html.match(/href="\/b\/[^"?#]+\/\d+"/g) || [];
+      matches.map(m => m.replace(/href="|"/g, "")).forEach(l => allLinks.add(l));
+      await new Promise(r => setTimeout(r, 200));
+    } catch (e) { /* 키워드 하나 실패해도 계속 */ }
+  }
 
-  // 개별 글 링크 추출해서 추가 수집
-  const matches = html.match(/href="\/b\/[^"]+\/\d+"/g) || [];
-  const links = [...new Set(matches.map(m => m.replace(/href="|"/g, "")))].slice(0, 8);
+  if (allLinks.size === 0) throw new Error("아카라이브 검색 결과 없음");
 
+  // 각 글 본문 수집
+  const chunks = [];
+  const links = [...allLinks].slice(0, 15);
   for (const link of links) {
     try {
       const postHtml = await fetchWithScraper(`https://arca.live${link}`);
       const postText = parseHTML(postHtml);
-      if (postText.length > 200) chunks.push(...chunkText(postText));
+      if (postText.length > 100) {
+        // 제목 추출 시도
+        const titleMatch = postHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].replace(" - 아카라이브", "").trim() : link;
+        chunks.push(`[제목] ${title}\n${postText}`);
+      }
       await new Promise(r => setTimeout(r, 300));
-    } catch (e) { /* 실패해도 계속 */ }
+    } catch (e) { /* 개별 글 실패 무시 */ }
   }
 
+  if (chunks.length === 0) throw new Error("아카라이브 공장 관련 글 없음");
   return await saveChunks(chunks, sourceName, "공통");
 }
 
-// ── 디시인사이드 크롤링 ──────────────────────────────────
+// ── 디시인사이드 크롤링 (키워드 검색 기반) ──────────────
 async function crawlDcInside(gallId) {
   const sourceName = `디시인사이드 ${gallId}갤`;
-  // 마이너 갤러리로 시도
-  const urls = [
-    "https://gall.dcinside.com/mgallery/board/lists/?id=" + gallId,
-    "https://m.dcinside.com/board/" + gallId,
-  ];
+  const allLinks = new Set();
 
-  let html = "";
-  let succeeded = false;
-  for (const url of urls) {
+  // 키워드별 검색
+  for (const kw of ["공장", "AIC", "컨베이어", "설비"]) {
     try {
-      html = await fetchWithScraper(url);
-      if (html.length > 500) { succeeded = true; break; }
-    } catch (e) { continue; }
+      const searchUrl = "https://gall.dcinside.com/mgallery/board/lists/?id=" + gallId + "&s_type=search_subject_memo&s_keyword=" + encodeURIComponent(kw);
+      const html = await fetchWithScraper(searchUrl);
+      // 디시 글 링크 패턴
+      const matches = html.match(/view_url[^"]*"([^"]+)"/g) || [];
+      const directMatches = html.match(/href="[^"]*view[^"]*no=\d+[^"]*"/g) || [];
+      directMatches.map(m => {
+        const match = m.match(/href="([^"]+)"/);
+        if (match) allLinks.add(match[1]);
+      });
+      await new Promise(r => setTimeout(r, 200));
+    } catch (e) { /* 계속 */ }
   }
 
-  if (!succeeded) throw new Error("디시 접근 실패");
-  const text = parseHTML(html);
-  if (text.length < 30) throw new Error("디시 콘텐츠 부족 (" + text.length + "자)");
+  if (allLinks.size === 0) throw new Error("디시 검색 결과 없음");
 
-  const chunks = chunkText(text);
-
-  // 개별 글 링크 추출
-  const matches = html.match(/\/(mgallery\/)?board\/view\/\?[^"'\s]+/g) || [];
-  const links = [...new Set(matches)].slice(0, 8);
-
+  const chunks = [];
+  const links = [...allLinks].slice(0, 15);
   for (const link of links) {
     try {
-      const postHtml = await fetchWithScraper(`https://gall.dcinside.com${link}`);
+      const fullUrl = link.startsWith("http") ? link : "https://gall.dcinside.com" + link;
+      const postHtml = await fetchWithScraper(fullUrl);
       const postText = parseHTML(postHtml);
-      if (postText.length > 200) chunks.push(...chunkText(postText));
+      if (postText.length > 100) chunks.push(postText);
       await new Promise(r => setTimeout(r, 300));
-    } catch (e) { /* 실패해도 계속 */ }
+    } catch (e) { /* 무시 */ }
   }
 
+  if (chunks.length === 0) throw new Error("디시 공장 관련 글 없음");
   return await saveChunks(chunks, sourceName, "공통");
 }
 
