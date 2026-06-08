@@ -31,7 +31,7 @@ function chunkText(text, size = 500, overlap = 100) {
   let start = 0;
   while (start < text.length) {
     const chunk = text.slice(start, Math.min(start + size, text.length)).trim();
-    if (chunk.length > 50) chunks.push(chunk);
+    if (chunk.length > 20) chunks.push(chunk);
     start += size - overlap;
   }
   return chunks;
@@ -110,7 +110,7 @@ const WIKIGG_ROOT = {
 async function crawlWiki(source) {
   const html = await fetchWithScraper(source.url);
   const text = parseHTML(html);
-  if (text.length < 100) throw new Error("콘텐츠 부족");
+  if (text.length < 30) throw new Error("콘텐츠 부족 (" + text.length + "자)");
   return await saveChunks(chunkText(text), source.name, source.region);
 }
 
@@ -118,7 +118,7 @@ async function crawlWiki(source) {
 async function crawlWikiDeep(root) {
   const html = await fetchWithScraper(root.url);
   const mainText = parseHTML(html);
-  if (mainText.length < 100) throw new Error("콘텐츠 부족");
+  if (mainText.length < 30) throw new Error("콘텐츠 부족 (" + mainText.length + "자)");
 
   const chunks = chunkText(mainText);
 
@@ -186,7 +186,7 @@ async function crawlArcalive(channel) {
   const url = `https://arca.live/b/${channel}?sort=recommend&p=1`;
   const html = await fetchWithScraper(url);
   const text = parseHTML(html);
-  if (text.length < 100) throw new Error("콘텐츠 부족");
+  if (text.length < 30) throw new Error("아카라이브 콘텐츠 부족 (" + text.length + "자)");
 
   const chunks = chunkText(text);
 
@@ -226,7 +226,7 @@ async function crawlDcInside(gallId) {
 
   if (!succeeded) throw new Error("디시 접근 실패");
   const text = parseHTML(html);
-  if (text.length < 100) throw new Error("콘텐츠 부족");
+  if (text.length < 30) throw new Error("디시 콘텐츠 부족 (" + text.length + "자)");
 
   const chunks = chunkText(text);
 
@@ -281,7 +281,7 @@ export async function POST(req) {
     } catch (e) {
       results.failed.push({ name: sourceKey, error: e.message });
     }
-    return Response.json({ message: `${sourceKey} 크롤링 완료! ${results.total}개 청크 저장`, results });
+    return Response.json({ message: `${sourceKey} 크롤링 완료! ${results.total}개 청크 저장`, results, debug: { sourceKey } });
   }
 
   // 전체 실행 (cron용)

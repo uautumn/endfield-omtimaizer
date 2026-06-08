@@ -157,7 +157,10 @@ export default function AdminPage() {
                         ) : r.status === "done" ? (
                           <span style={{ fontSize: "9px", color: "#4ecb80" }}>✓ {r.chunks}개</span>
                         ) : (
-                          <span style={{ fontSize: "9px", color: "#ff6666" }} title={r.error}>✗ 실패</span>
+                          <div style={{ textAlign: "right" }}>
+                          <span style={{ fontSize: "9px", color: "#ff6666" }}>✗ 실패</span>
+                          {r.error && <div style={{ fontSize: "8px", color: "#ff444488", maxWidth: "160px", wordBreak: "break-all" }}>{r.error}</div>}
+                        </div>
                         )
                       ) : (
                         <button onClick={() => runCrawlSource(src.key, src.label)}
