@@ -3,10 +3,12 @@ import { supabase } from "@/lib/supabase";
 const SCRAPER_BASE = "https://api.scraperapi.com";
 
 // ScraperAPI로 페이지 fetch
-async function fetchWithScraper(url, json = false, render = true) {
+async function fetchWithScraper(url, json = false, render = false) {
   const renderParam = render ? "true" : "false";
-  const scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=${renderParam}`;
-  const res = await fetch(scraperUrl);
+  const scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=${renderParam}&country_code=kr`;
+  const res = await fetch(scraperUrl, {
+    headers: { "Accept-Language": "ko-KR,ko;q=0.9" }
+  });
   if (!res.ok) throw new Error(`ScraperAPI HTTP ${res.status}`);
   return json ? await res.json() : await res.text();
 }
@@ -193,7 +195,7 @@ async function crawlArcalive(channel) {
   for (const kw of FACTORY_KEYWORDS) {
     try {
       const searchUrl = `https://arca.live/b/${channel}?q=${encodeURIComponent(kw)}&sort=recommend`;
-      const html = await fetchWithScraper(searchUrl);
+      const html = await fetchWithScraper(searchUrl, false, true);
       const matches = html.match(/href="\/b\/[^"?#]+\/\d+"/g) || [];
       matches.map(m => m.replace(/href="|"/g, "")).forEach(l => allLinks.add(l));
       await new Promise(r => setTimeout(r, 200));
@@ -207,7 +209,7 @@ async function crawlArcalive(channel) {
   const links = [...allLinks].slice(0, 15);
   for (const link of links) {
     try {
-      const postHtml = await fetchWithScraper(`https://arca.live${link}`);
+      const postHtml = await fetchWithScraper(`https://arca.live${link}`, false, true);
       const postText = parseHTML(postHtml);
       if (postText.length > 100) {
         // 제목 추출 시도
@@ -232,7 +234,7 @@ async function crawlDcInside(gallId) {
   for (const kw of ["공장", "AIC", "컨베이어", "설비"]) {
     try {
       const searchUrl = "https://gall.dcinside.com/mgallery/board/lists/?id=" + gallId + "&s_type=search_subject_memo&s_keyword=" + encodeURIComponent(kw);
-      const html = await fetchWithScraper(searchUrl);
+      const html = await fetchWithScraper(searchUrl, false, true);
       // 디시 글 링크 패턴
       const matches = html.match(/view_url[^"]*"([^"]+)"/g) || [];
       const directMatches = html.match(/href="[^"]*view[^"]*no=\d+[^"]*"/g) || [];
@@ -251,7 +253,7 @@ async function crawlDcInside(gallId) {
   for (const link of links) {
     try {
       const fullUrl = link.startsWith("http") ? link : "https://gall.dcinside.com" + link;
-      const postHtml = await fetchWithScraper(fullUrl);
+      const postHtml = await fetchWithScraper(fullUrl, false, true);
       const postText = parseHTML(postHtml);
       if (postText.length > 100) chunks.push(postText);
       await new Promise(r => setTimeout(r, 300));
@@ -281,13 +283,23 @@ export async function POST(req) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const sourceKey = searchParams.get("source");
+  // Vercel에서 req.url이 상대경로일 수 있으므로 안전하게 파싱
+  let sourceKey = null;
+  let debugMode = false;
+  try {
+    const baseUrl = "https://endfield-omtimaizer.vercel.app";
+    const parsedUrl = new URL(req.url.startsWith("http") ? req.url : baseUrl + req.url);
+    sourceKey = parsedUrl.searchParams.get("source");
+    debugMode = parsedUrl.searchParams.get("debug") === "true";
+  } catch (e) {
+    // URL 파싱 실패시 body에서 source 읽기 시도
+    try {
+      const body = await req.json().catch(() => ({}));
+      sourceKey = body.source || null;
+    } catch (_) {}
+  }
 
   const results = { success: [], failed: [], total: 0 };
-
-  // 디버그 모드 — HTML 원본 확인
-  const debugMode = searchParams.get("debug") === "true";
   if (debugMode && sourceKey) {
     const urlMap = {
       namu_aic: "https://namu.wiki/w/%EB%AA%85%EC%9D%BC%EB%B0%A9%EC%A3%BC%3A%20%EC%97%94%EB%93%9C%ED%95%84%EB%93%9C/%EA%B3%B5%EC%97%85",
