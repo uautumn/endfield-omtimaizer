@@ -54,7 +54,7 @@ async function getEmbedding(text) {
 async function collectArcaliveLinks() {
   const links = new Set();
   // 키워드 2개만 — 타임아웃 방지
-  const keywords = ["공장", "공략"];
+  const keywords = ["공장", "청사진"];
   for (const kw of keywords) {
     try {
       const url = `https://arca.live/b/akendfield?q=${encodeURIComponent(kw)}&sort=recommend`;
