@@ -248,7 +248,7 @@ async function crawlDcInside(gallId) {
 
 // ── 메인 크롤링 실행 ─────────────────────────────────────
 export async function POST(req) {
-  const { authorization } = Object.fromEntries(req.headers);
+  const authorization = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -310,7 +310,7 @@ export async function POST(req) {
 
 // GET — 상태 조회
 export async function GET(req) {
-  const { authorization } = Object.fromEntries(req.headers);
+  const authorization = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
