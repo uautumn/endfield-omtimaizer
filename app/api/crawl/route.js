@@ -246,64 +246,57 @@ async function crawlDcInside(gallId) {
   return await saveChunks(chunks, sourceName, "공통");
 }
 
-// ── 메인 크롤링 실행 ─────────────────────────────────────
+// ── 소스 맵 ──────────────────────────────────────────────
+const SOURCE_MAP = {
+  namu_aic:    () => crawlWiki(WIKI_SOURCES[0]),
+  namu_base:   () => crawlWiki(WIKI_SOURCES[1]),
+  namu_valley: () => crawlWiki(WIKI_SOURCES[2]),
+  namu_wulong: () => crawlWiki(WIKI_SOURCES[3]),
+  namu_main:   () => crawlWiki(WIKI_SOURCES[4]),
+  wikigg:      () => crawlWikiDeep(WIKIGG_ROOT),
+  arcalive:    () => crawlArcalive("akendfield"),
+  dcinside:    () => crawlDcInside("endfield"),
+};
+
+// ── 크롤링 실행 ──────────────────────────────────────────
 export async function POST(req) {
   const authorization = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   if (authorization !== `Bearer ${process.env.CRAWL_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const sourceKey = searchParams.get("source");
+
   const results = { success: [], failed: [], total: 0 };
 
-  // 나무위키
-  for (const source of WIKI_SOURCES) {
+  // 특정 소스만 실행
+  if (sourceKey) {
+    const fn = SOURCE_MAP[sourceKey];
+    if (!fn) return Response.json({ error: `알 수 없는 소스: ${sourceKey}` }, { status: 400 });
     try {
-      const count = await crawlWiki(source);
-      results.success.push({ name: source.name, chunks: count });
+      const count = await fn();
+      results.success.push({ name: sourceKey, chunks: count });
       results.total += count;
     } catch (e) {
-      results.failed.push({ name: source.name, error: e.message });
+      results.failed.push({ name: sourceKey, error: e.message });
+    }
+    return Response.json({ message: `${sourceKey} 크롤링 완료! ${results.total}개 청크 저장`, results });
+  }
+
+  // 전체 실행 (cron용)
+  for (const [key, fn] of Object.entries(SOURCE_MAP)) {
+    try {
+      const count = await fn();
+      results.success.push({ name: key, chunks: count });
+      results.total += count;
+    } catch (e) {
+      results.failed.push({ name: key, error: e.message });
     }
   }
 
-  // wiki.gg AIC — 하위 페이지까지 자동 수집
-  try {
-    const count = await crawlWikiDeep(WIKIGG_ROOT);
-    results.success.push({ name: WIKIGG_ROOT.name + " (하위 포함)", chunks: count });
-    results.total += count;
-  } catch (e) {
-    results.failed.push({ name: WIKIGG_ROOT.name, error: e.message });
-  }
-
-  // Reddit — API 키 필요, 현재 비활성화
-  // try {
-  //   const count = await crawlReddit("EndfieldGlobal");
-  //   results.success.push({ name: "Reddit r/EndfieldGlobal", chunks: count });
-  //   results.total += count;
-  // } catch (e) {
-  //   results.failed.push({ name: "Reddit r/EndfieldGlobal", error: e.message });
-  // }
-
-  // 아카라이브
-  try {
-    const count = await crawlArcalive("akendfield");
-    results.success.push({ name: "아카라이브 akendfield", chunks: count });
-    results.total += count;
-  } catch (e) {
-    results.failed.push({ name: "아카라이브 akendfield", error: e.message });
-  }
-
-  // 디시인사이드
-  try {
-    const count = await crawlDcInside("endfield");
-    results.success.push({ name: "디시인사이드 endfield갤", chunks: count });
-    results.total += count;
-  } catch (e) {
-    results.failed.push({ name: "디시인사이드 endfield갤", error: e.message });
-  }
-
   return Response.json({
-    message: `크롤링 완료! ${results.total}개 청크 저장`,
+    message: `전체 크롤링 완료! ${results.total}개 청크 저장`,
     results,
   });
 }

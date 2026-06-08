@@ -4,5 +4,13 @@
       "path": "/api/cron/crawl",
       "schedule": "0 3 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/crawl/route.js": {
+      "maxDuration": 60
+    },
+    "app/api/cron/crawl/route.js": {
+      "maxDuration": 60
+    }
+  }
 }
