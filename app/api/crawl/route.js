@@ -78,7 +78,7 @@ async function collectArcaliveLinks() {
 
 async function collectDcInsideLinks() {
   const links = new Set();
-  for (const kw of ["공장", "AIC"]) {
+  for (const kw of ["공장", "청사진"]) {
     try {
       const url = `https://gall.dcinside.com/mgallery/board/lists/?id=endfield&s_type=search_subject_memo&s_keyword=${encodeURIComponent(kw)}`;
       const html = await fetchWithScraper(url, false);
@@ -172,8 +172,7 @@ async function processQueue(limit = 3) {
         await supabase.from("guides").insert({
           title: title,
           region: item.region,
-          content: chunks.slice(0, 3).join("
-"),
+          content: chunks.slice(0, 3).join(" \n "),
           author: `[자동수집] ${item.source}`,
           source_url: item.url,
           embedding,
