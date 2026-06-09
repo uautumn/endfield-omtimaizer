@@ -91,6 +91,20 @@ export default function AdminPage() {
     }
   };
 
+  // failed 링크 리셋
+  const resetFailed = async () => {
+    setLoading(true);
+    addLog("🔄 실패 링크 리셋 중...");
+    try {
+      const data = await call({ action: "reset" });
+      addLog("✓ " + data.message);
+      await fetchStatus();
+    } catch (e) {
+      addLog("✗ 리셋 실패: " + e.message);
+    }
+    setLoading(false);
+  };
+
   // 전체 자동 실행
   const runAll = async () => {
     setLoading(true);
@@ -173,6 +187,14 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {/* 실패 리셋 버튼 */}
+            {status?.queue?.failed > 0 && (
+              <button onClick={resetFailed} disabled={loading}
+                style={{ width: "100%", padding: "7px", border: "1px solid #ff444466", background: "rgba(255,68,68,0.08)", color: "#ff6666", fontSize: "9px", cursor: loading ? "not-allowed" : "pointer", fontFamily: "monospace", letterSpacing: "0.08em", marginBottom: "8px", clipPath: CP8 }}>
+                [ 실패 링크 {status.queue.failed}개 → 재시도 ]
+              </button>
+            )}
 
             {/* 1단계 — 링크 수집 */}
             <div style={{ background: C.bg2, border: "1px solid " + C.mintBd, padding: "14px 16px", marginBottom: "8px", clipPath: CP8 }}>
