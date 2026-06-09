@@ -4,9 +4,12 @@ const SCRAPER_BASE = "https://api.scraperapi.com";
 const FACTORY_KEYWORDS = ["공장", "AIC", "컨베이어", "생산라인", "설비", "자동화"];
 
 // ScraperAPI fetch
-async function fetchWithScraper(url, render = false) {
-  const scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=${render}&country_code=kr`;
-  const res = await fetch(scraperUrl, { signal: AbortSignal.timeout(4000) });
+async function fetchWithScraper(url, render = false, withCookie = false) {
+  let scraperUrl = `${SCRAPER_BASE}?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=${render}&country_code=kr`;
+  if (withCookie && process.env.ARCALIVE_COOKIE) {
+    scraperUrl += `&cookies=${encodeURIComponent(process.env.ARCALIVE_COOKIE)}`;
+  }
+  const res = await fetch(scraperUrl, { signal: AbortSignal.timeout(7000) });
   if (!res.ok) throw new Error(`ScraperAPI HTTP ${res.status}`);
   return await res.text();
 }
@@ -61,7 +64,7 @@ async function collectArcaliveLinks() {
   ];
   for (const url of urls) {
     try {
-      const html = await fetchWithScraper(url, false);
+      const html = await fetchWithScraper(url, false, true);
       // 숫자로 끝나는 글 링크 패턴
       const matches = html.match(/href="\/b\/akendfield\/\d+"/g) || [];
       matches.forEach(m => {
@@ -81,7 +84,7 @@ async function collectDcInsideLinks() {
   for (const kw of ["공장", "청사진"]) {
     try {
       const url = `https://gall.dcinside.com/mgallery/board/lists/?id=endfield&s_type=search_subject_memo&s_keyword=${encodeURIComponent(kw)}`;
-      const html = await fetchWithScraper(url, false);
+      const html = await fetchWithScraper(url, false, true);
       const matches = html.match(/href="[^"]*\/mgallery\/board\/view\/\?[^"]+"/g) || [];
       matches.forEach(m => {
         const path = m.match(/href="([^"]+)"/)?.[1];
@@ -153,7 +156,7 @@ async function processQueue(limit = 3) {
       // 본문 fetch
       const isArcalive = item.url.includes("arca.live");
       const isDc = item.url.includes("dcinside.com");
-      const html = await fetchWithScraper(item.url, isArcalive || isDc);
+      const html = await fetchWithScraper(item.url, isArcalive || isDc, isArcalive);
       const text = parseHTML(html);
 
       if (text.length < 50) throw new Error("내용 부족");
