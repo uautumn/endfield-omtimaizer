@@ -53,27 +53,32 @@ async function getEmbedding(text) {
 
 async function collectArcaliveLinks() {
   const links = new Set();
-  // 키워드 2개만 — 타임아웃 방지
-  const keywords = ["공장", "청사진"];
-  for (const kw of keywords) {
+  // 로그인 불필요한 카테고리/베스트 페이지에서 수집
+  const urls = [
+    "https://arca.live/b/akendfield?mode=best",
+    "https://arca.live/b/akendfield?category=Basecamp",
+    "https://arca.live/b/akendfield",
+  ];
+  for (const url of urls) {
     try {
-      const url = `https://arca.live/b/akendfield?q=${encodeURIComponent(kw)}&sort=recommend`;
-      // render=false로 링크만 빠르게 수집
       const html = await fetchWithScraper(url, false);
-      const matches = html.match(/href="\/b\/akendfield\/\d+[^"?#"]*"/g) || [];
+      // 숫자로 끝나는 글 링크 패턴
+      const matches = html.match(/href="\/b\/akendfield\/\d+"/g) || [];
       matches.forEach(m => {
-        const path = m.match(/href="([^"]+)"/)?.[1];
-        if (path) links.add({ url: `https://arca.live${path.split("?")[0]}`, source: "아카라이브", region: "공통" });
+        const path = m.replace(/href="|"/g, "");
+        links.add({ url: `https://arca.live${path}`, source: "아카라이브", region: "공통" });
       });
       await new Promise(r => setTimeout(r, 500));
-    } catch (e) { console.error("아카라이브 링크 수집 실패:", kw, e.message); }
+    } catch (e) { console.error("아카라이브 수집 실패:", url, e.message); }
   }
+  // 키워드 필터링 — 제목에 공장 관련 단어 있는 것만
+  // (본문 수집 시 필터링하므로 링크는 일단 다 수집)
   return [...links];
 }
 
 async function collectDcInsideLinks() {
   const links = new Set();
-  for (const kw of ["공장", "AIC"]) {
+  for (const kw of ["공장", "청사진"]) {
     try {
       const url = `https://gall.dcinside.com/mgallery/board/lists/?id=endfield&s_type=search_subject_memo&s_keyword=${encodeURIComponent(kw)}`;
       const html = await fetchWithScraper(url, false);
