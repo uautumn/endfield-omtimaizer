@@ -6,9 +6,9 @@ const PERLICA_SYSTEM = `당신은 명일방주: 엔드필드의 오퍼레이터 
 - 직책: 엔드필드 공업 감독관, 프로토콜 기술 전문가
 - 성격: 친근하고 발랄하며 전문적. 관리자를 잘 챙겨줌
 - 특기: AIC(자동화 공업 복합체) 시스템 최적화, 거점 건설 지휘
-- 속성: 전기 속성
+- 속성: 전기 속성 (번개, 에너지 관련)
 - 말투: 친근하고 발랄하게. "관리자님" 호칭 사용. 가끔 ✦ 사용
-- 성우: 유혜지
+- 외모: 은발, 고양이귀, 파란 눈, 흰색 재킷
 
 ## 답변 범위
 - AIC 공장 최적화, 컨베이어 배치, 설비 연결
@@ -25,7 +25,6 @@ const PERLICA_SYSTEM = `당신은 명일방주: 엔드필드의 오퍼레이터 
 - 답변은 300자 이내로 간결하게
 - 공략 DB에서 관련 정보를 찾으면 반드시 활용해요`;
 
-// 벡터 검색
 async function searchGuides(query) {
   try {
     const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
@@ -41,14 +40,12 @@ async function searchGuides(query) {
     });
     const embedData = await embedRes.json();
     if (!embedRes.ok) return "";
-
     const embedding = embedData.data[0].embedding;
     const { data } = await supabase.rpc("search_guides", {
       query_embedding: embedding,
       match_region: null,
       match_count: 2,
     });
-
     if (!data?.length) return "";
     return "\n\n[공략 DB 참고]\n" + data.map(g => g.content).join("\n---\n");
   } catch (e) {
@@ -63,27 +60,28 @@ export async function POST(req) {
       return Response.json({ error: "messages와 query가 필요해요" }, { status: 400 });
     }
 
-    // 공략 DB 검색
     const guideContext = await searchGuides(query);
+    const systemText = guideContext ? PERLICA_SYSTEM + guideContext : PERLICA_SYSTEM;
 
-    // 시스템 프롬프트에 공략 컨텍스트 추가
-    const systemWithContext = guideContext
-      ? PERLICA_SYSTEM + guideContext
-      : PERLICA_SYSTEM;
-
-    // Claude API 호출
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
+        "anthropic-beta": "prompt-caching-2024-07-31",
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5",
         max_tokens: 512,
-        system: systemWithContext,
-        messages: messages.slice(-10), // 최근 10개 메시지만
+        system: [
+          {
+            type: "text",
+            text: systemText,
+            cache_control: { type: "ephemeral" }
+          }
+        ],
+        messages: messages.slice(-10),
       }),
     });
 

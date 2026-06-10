@@ -36,12 +36,13 @@ function Field({ label, children }) {
   );
 }
 
-function GuideCard({ guide }) {
+function GuideCard({ guide, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const regionColor = guide.region === "4번 협곡" ? "#FF6B00" : guide.region === "무릉" ? "#1ec8a0" : "#94A3B8";
   return (
     <div style={{ background: C.bg2, border: "1px solid " + C.mintBd, clipPath: CP8, overflow: "hidden" }}>
-      <div onClick={() => setOpen(!open)} style={{ padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div onClick={() => setOpen(!open)} style={{ flex: 1, cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
         {/* 이미지 썸네일 */}
         {guide.image_url && (
           <img src={guide.image_url} alt="공략 이미지"
@@ -100,7 +101,8 @@ export default function GuidesPage() {
   const fileRef = useRef();
 
   const [form, setForm] = useState({ title: "", region: "공통", author: "", content: "", sourceUrl: "" });
-  const [image, setImage] = useState(null); // { preview, data, type }
+  const [image, setImage] = useState(null);
+  const [editId, setEditId] = useState(null); // 수정 중인 공략 id
 
   const fetchGuides = async (region) => {
     setLoading(true);
@@ -137,20 +139,19 @@ export default function GuidesPage() {
     if (image) setAnalyzing(true);
     try {
       const res = await fetch("/api/guides", {
-        method: "POST",
+        method: editId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          imageData: image?.data || null,
-          imageType: image?.type || null,
-          sourceUrl: form.sourceUrl || null,
-        }),
+        body: JSON.stringify(editId
+          ? { id: editId, title: form.title, region: form.region, content: form.content, author: form.author }
+          : { ...form, imageData: image?.data || null, imageType: image?.type || null, sourceUrl: form.sourceUrl || null }
+        ),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "등록 실패");
       setSuccess(true);
       setForm({ title: "", region: "공통", author: "", content: "", sourceUrl: "" });
       setImage(null);
+      setEditId(null);
       setTimeout(() => { setSuccess(false); setTab("list"); fetchGuides(filterRegion); }, 1500);
     } catch (e) {
       setError(e.message);
@@ -207,7 +208,16 @@ export default function GuidesPage() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {guides.map(g => <GuideCard key={g.id} guide={g} />)}
+                {guides.map(g => (
+                  <GuideCard key={g.id} guide={g}
+                    onEdit={(g) => { setForm({ title:g.title, region:g.region, author:g.author, content:g.content, sourceUrl:"" }); setEditId(g.id); setTab("submit"); }}
+                    onDelete={async (id) => {
+                      if (!confirm("정말 삭제할까요?")) return;
+                      await fetch(`/api/guides?id=${id}`, { method: "DELETE" });
+                      fetchGuides(filterRegion);
+                    }}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -289,6 +299,13 @@ export default function GuidesPage() {
                 style={{ ...inputStyle, resize: "vertical", minHeight: "160px" }} />
             </Field>
 
+            {editId && (
+              <div style={{ padding: "8px 14px", background: "rgba(232,216,0,0.08)", borderLeft: "2px solid rgba(232,216,0,0.4)", fontSize: "10px", color: "rgba(232,216,0,0.8)", marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>✏️ 공략 수정 중...</span>
+                <button onClick={() => { setEditId(null); setForm({ title:"", region:"공통", author:"", content:"", sourceUrl:"" }); }}
+                  style={{ fontSize: "9px", border: "1px solid rgba(232,216,0,0.3)", background: "transparent", color: "rgba(232,216,0,0.7)", cursor: "pointer", padding: "2px 8px", fontFamily: "monospace" }}>취소</button>
+              </div>
+            )}
             {error && (
               <div style={{ padding: "10px 14px", background: "rgba(255,68,68,0.1)", borderLeft: "2px solid #ff4444", fontSize: "11px", color: "#ff6666", marginBottom: "12px" }}>
                 !! {error}
@@ -310,7 +327,7 @@ export default function GuidesPage() {
 
             <button onClick={handleSubmit} disabled={submitting}
               style={{ width: "100%", padding: "13px", border: "1px solid " + (submitting ? C.mintBd : C.mint + "99"), background: submitting ? "transparent" : "linear-gradient(135deg," + C.mint + "20," + C.mint + "08)", color: submitting ? C.dim : C.mint, fontSize: "11px", fontWeight: "bold", cursor: submitting ? "not-allowed" : "pointer", fontFamily: "monospace", letterSpacing: "0.15em", clipPath: CP16 }}>
-              {submitting ? (analyzing ? "[ AI 이미지 분석 중... ]" : "[ 등록 중... ]") : "[ 공략 등록하기 ]"}
+              {submitting ? (analyzing ? "[ AI 이미지 분석 중... ]" : editId ? "[ 수정 중... ]" : "[ 등록 중... ]") : editId ? "[ 공략 수정하기 ]" : "[ 공략 등록하기 ]"}
             </button>
 
             <div style={{ marginTop: "12px", padding: "10px 14px", background: C.bg2, border: "1px solid " + C.line, fontSize: "9px", color: C.sub, lineHeight: "1.7" }}>

@@ -138,3 +138,57 @@ export async function GET(req) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
+
+// 공략글 수정
+export async function PUT(req) {
+  try {
+    const { id, title, region, content, author } = await req.json();
+    if (!id || !title || !content) {
+      return Response.json({ error: "id, 제목, 내용은 필수예요." }, { status: 400 });
+    }
+
+    // 임베딩 재생성
+    const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: `${title}\n${content}`,
+      }),
+    });
+    const embedData = await embedRes.json();
+    if (!embedRes.ok) throw new Error(embedData.error?.message || "임베딩 실패");
+    const embedding = embedData.data[0].embedding;
+
+    const { data, error } = await supabase
+      .from("guides")
+      .update({ title, region: region || "공통", content, author: author || "익명", embedding })
+      .eq("id", id)
+      .select("id, title, region, author, created_at")
+      .single();
+
+    if (error) throw new Error(error.message);
+    return Response.json({ success: true, guide: data });
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 500 });
+  }
+}
+
+// 공략글 삭제
+export async function DELETE(req) {
+  try {
+    const urlStr = req.url.includes("://") ? req.url : `https://endfield-omtimaizer.vercel.app${req.url}`;
+    const { searchParams } = new URL(urlStr);
+    const id = searchParams.get("id");
+    if (!id) return Response.json({ error: "id가 필요해요." }, { status: 400 });
+
+    const { error } = await supabase.from("guides").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    return Response.json({ success: true });
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 500 });
+  }
+}
