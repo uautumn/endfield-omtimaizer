@@ -289,7 +289,7 @@ export default function Home() {
         <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px)"}}/>
       </div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:"880px",margin:"0 auto",padding:"0 0 64px",transition:"margin-right 0.3s ease",...(chatOpen?{marginRight:"340px"}:{})}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:"880px",padding:"0 0 64px",transition:"all 0.3s ease",margin:chatOpen?"0 auto 0 max(16px, calc(50vw - 780px))":"0 auto"}}>
 
         {/* ── 펠리카 헤더 — 퍼스널 컬러 (전기/옐로) ── */}
         <div style={{padding:"28px 20px 20px",borderBottom:"1px solid "+T.accentBd,marginBottom:"16px",position:"relative",overflow:"hidden"}}>
