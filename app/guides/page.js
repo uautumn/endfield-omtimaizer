@@ -212,7 +212,6 @@ export default function GuidesPage() {
                   <GuideCard key={g.id} guide={g}
                     onEdit={(g) => { setForm({ title:g.title, region:g.region, author:g.author, content:g.content, sourceUrl:"" }); setEditId(g.id); setTab("submit"); }}
                     onDelete={async (id) => {
-                      if (!confirm("정말 삭제할까요?")) return;
                       await fetch(`/api/guides?id=${id}`, { method: "DELETE" });
                       fetchGuides(filterRegion);
                     }}
