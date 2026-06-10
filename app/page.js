@@ -601,7 +601,7 @@ export default function Home() {
                   <div key={i} style={{display:"flex",flexDirection:"column",alignItems:msg.role==="user"?"flex-end":"flex-start"}}>
                     {msg.role==="assistant" && (
                       <div style={{display:"flex",alignItems:"flex-end",gap:"6px",maxWidth:"85%"}}>
-                        <img src={"data:image/jpeg;base64,"+(chatLoading&&i===chatMessages.length-1?imgs.analyzing:imgs.idle)} alt="펠리카"
+                        <img src={"data:image/jpeg;base64,"+(chatLoading&&i===chatMessages.length-1?FI.analyzing:FI.idle)} alt="펠리카"
                           style={{width:"22px",height:"22px",objectFit:"cover",flexShrink:0,border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-3px) 0,100% 3px,100% 100%,3px 100%,0 calc(100%-3px))"}}/>
                         <div style={{background:"rgba(232,216,0,0.08)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 10px",fontSize:"11px",color:"#f0ede8",lineHeight:"1.7",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)"}}>
                           {msg.content}
@@ -618,7 +618,7 @@ export default function Home() {
                 ))}
                 {chatLoading && (
                   <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <img src={"data:image/jpeg;base64,"+imgs.analyzing} alt="펠리카"
+                    <img src={"data:image/jpeg;base64,"+FI.analyzing} alt="펠리카"
                       style={{width:"22px",height:"22px",objectFit:"cover",border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-3px) 0,100% 3px,100% 100%,3px 100%,0 calc(100%-3px))"}}/>
                     <div style={{background:"rgba(232,216,0,0.08)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 12px",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)"}}>
                       <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
