@@ -573,7 +573,7 @@ export default function Home() {
           {!chatOpen && (
             <button onClick={()=>setChatOpen(true)}
               style={{position:"fixed",right:"16px",bottom:"24px",width:"56px",height:"56px",borderRadius:"50%",background:"linear-gradient(135deg,#E8D800,#b8a800)",border:"none",cursor:"pointer",boxShadow:"0 0 20px rgba(232,216,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}}>
-              <img src={"data:image/png;base64,"+main_img} alt="펠리카" style={{width:"40px",height:"40px",objectFit:"cover",borderRadius:"50%"}}/>
+              <img src={"data:image/png;base64,"+FI.idle} alt="펠리카" style={{width:"40px",height:"40px",objectFit:"cover",borderRadius:"50%"}}/>
             </button>
           )}
 
@@ -584,7 +584,7 @@ export default function Home() {
               {/* 챗봇 헤더 */}
               <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(232,216,0,0.2)",display:"flex",alignItems:"center",gap:"10px",background:"rgba(232,216,0,0.05)",flexShrink:0}}>
                 <div style={{width:"32px",height:"32px",overflow:"hidden",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100%-6px))",border:"1px solid rgba(232,216,0,0.6)",flexShrink:0}}>
-                  <img src={"data:image/png;base64,"+main_img} alt="펠리카" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <img src={"data:image/png;base64,"+FI.idle} alt="펠리카" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 </div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:"11px",fontWeight:"bold",color:"#E8D800",letterSpacing:"0.06em"}}>PERLICA</div>
