@@ -125,7 +125,14 @@ export default function Home() {
   const [error,setError] = useState(null);
   const [usedGuides,setUsedGuides] = useState(false);
   const [guideImages,setGuideImages] = useState([]);
+  const [chatOpen,setChatOpen] = useState(false);
+  const [chatMessages,setChatMessages] = useState([
+    { role:"assistant", content:"관리자님, 안녕하세요! 펠리카예요 ✦ 공장 공략, 캐릭터 육성, 배너 정보 등 뭐든 물어봐요!", usedGuides:false }
+  ]);
+  const [chatInput,setChatInput] = useState("");
+  const [chatLoading,setChatLoading] = useState(false);
   const fileRef = useRef();
+  const chatEndRef = useRef();
 
   const T = THEME[region];
   const rdata = REGIONS[region];
@@ -151,6 +158,31 @@ export default function Home() {
       reader.onload=e=>setShots(prev=>[...prev,{preview:e.target.result,data:e.target.result.split(",")[1],type:file.type,name:file.name}]);
       reader.readAsDataURL(file);
     });
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = { role:"user", content:chatInput.trim() };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          messages: newMessages.map(m=>({role:m.role,content:m.content})),
+          query: chatInput.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error||"오류");
+      setChatMessages(prev=>[...prev,{role:"assistant",content:data.reply,usedGuides:data.usedGuides}]);
+    } catch(e) {
+      setChatMessages(prev=>[...prev,{role:"assistant",content:"앗, 오류가 났어요 ㅠ 다시 시도해봐요!",usedGuides:false}]);
+    }
+    setChatLoading(false);
   };
 
   const doAnalyze = async () => {
@@ -257,7 +289,9 @@ export default function Home() {
         <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px)"}}/>
       </div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:"880px",margin:"0 auto",padding:"0 0 64px"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:"1280px",margin:"0 auto",padding:"0 0 64px",display:"flex",gap:"0",alignItems:"flex-start"}}>
+        {/* ── 메인 콘텐츠 ── */}
+        <div style={{flex:1,minWidth:0,maxWidth:"880px"}}>
 
         {/* ── 펠리카 헤더 — 퍼스널 컬러 (전기/옐로) ── */}
         <div style={{padding:"28px 20px 20px",borderBottom:"1px solid "+T.accentBd,marginBottom:"16px",position:"relative",overflow:"hidden"}}>
@@ -530,10 +564,93 @@ export default function Home() {
             </div>
           </div>
         </div>
+        </div>
+
+        {/* ── 펠리카 챗봇 사이드 패널 ── */}
+        <div style={{width:"340px",flexShrink:0,position:"sticky",top:"20px",height:"calc(100vh - 40px)",display:"flex",flexDirection:"column",marginLeft:"12px",zIndex:10}}>
+
+          {/* 챗봇 토글 버튼 (닫혔을 때) */}
+          {!chatOpen && (
+            <button onClick={()=>setChatOpen(true)}
+              style={{position:"fixed",right:"16px",bottom:"24px",width:"56px",height:"56px",borderRadius:"50%",background:"linear-gradient(135deg,#E8D800,#b8a800)",border:"none",cursor:"pointer",boxShadow:"0 0 20px rgba(232,216,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}}>
+              <img src={"data:image/png;base64,"+main_img} alt="펠리카" style={{width:"40px",height:"40px",objectFit:"cover",borderRadius:"50%"}}/>
+            </button>
+          )}
+
+          {/* 챗봇 패널 */}
+          {chatOpen && (
+            <div style={{position:"fixed",right:"16px",bottom:"24px",width:"320px",height:"480px",background:"rgba(3,8,15,0.96)",border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100%-12px))",display:"flex",flexDirection:"column",zIndex:100,boxShadow:"0 0 30px rgba(232,216,0,0.15)",backdropFilter:"blur(12px)"}}>
+
+              {/* 챗봇 헤더 */}
+              <div style={{padding:"10px 14px",borderBottom:"1px solid rgba(232,216,0,0.2)",display:"flex",alignItems:"center",gap:"10px",background:"rgba(232,216,0,0.05)",flexShrink:0}}>
+                <div style={{width:"32px",height:"32px",overflow:"hidden",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100%-6px))",border:"1px solid rgba(232,216,0,0.6)",flexShrink:0}}>
+                  <img src={"data:image/png;base64,"+main_img} alt="펠리카" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:"11px",fontWeight:"bold",color:"#E8D800",letterSpacing:"0.06em"}}>PERLICA</div>
+                  <div style={{fontSize:"8px",color:"rgba(232,216,0,0.5)",letterSpacing:"0.1em"}}>{chatLoading?"THINKING...":"ONLINE ✦"}</div>
+                </div>
+                <button onClick={()=>setChatOpen(false)}
+                  style={{background:"transparent",border:"none",color:"rgba(232,216,0,0.5)",cursor:"pointer",fontSize:"16px",padding:"0",lineHeight:1}}>✕</button>
+              </div>
+
+              {/* 메시지 목록 */}
+              <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:"8px"}}>
+                {chatMessages.map((msg,i)=>(
+                  <div key={i} style={{display:"flex",flexDirection:"column",alignItems:msg.role==="user"?"flex-end":"flex-start"}}>
+                    {msg.role==="assistant" && (
+                      <div style={{display:"flex",alignItems:"flex-end",gap:"6px",maxWidth:"85%"}}>
+                        <img src={"data:image/jpeg;base64,"+(chatLoading&&i===chatMessages.length-1?imgs.analyzing:imgs.idle)} alt="펠리카"
+                          style={{width:"22px",height:"22px",objectFit:"cover",flexShrink:0,border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-3px) 0,100% 3px,100% 100%,3px 100%,0 calc(100%-3px))"}}/>
+                        <div style={{background:"rgba(232,216,0,0.08)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 10px",fontSize:"11px",color:"#f0ede8",lineHeight:"1.7",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)"}}>
+                          {msg.content}
+                          {msg.usedGuides && <div style={{fontSize:"8px",color:"rgba(30,200,160,0.7)",marginTop:"4px"}}>✦ 공략 DB 참고</div>}
+                        </div>
+                      </div>
+                    )}
+                    {msg.role==="user" && (
+                      <div style={{background:"rgba(232,216,0,0.12)",border:"1px solid rgba(232,216,0,0.3)",padding:"8px 10px",fontSize:"11px",color:"#E8D800",lineHeight:"1.7",maxWidth:"85%",clipPath:"polygon(6px 0,100% 0,100% calc(100%-6px),calc(100%-6px) 100%,0 100%,0 6px)"}}>
+                        {msg.content}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                    <img src={"data:image/jpeg;base64,"+imgs.analyzing} alt="펠리카"
+                      style={{width:"22px",height:"22px",objectFit:"cover",border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-3px) 0,100% 3px,100% 100%,3px 100%,0 calc(100%-3px))"}}/>
+                    <div style={{background:"rgba(232,216,0,0.08)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 12px",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)"}}>
+                      <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
+                        {[0,1,2].map(i=><div key={i} style={{width:"5px",height:"5px",background:"#E8D800",borderRadius:"50%",animation:`chatDot 1.2s ${i*0.2}s infinite`}}/>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef}/>
+              </div>
+
+              {/* 입력창 */}
+              <div style={{padding:"10px 12px",borderTop:"1px solid rgba(232,216,0,0.2)",display:"flex",gap:"6px",flexShrink:0}}>
+                <input
+                  value={chatInput}
+                  onChange={e=>setChatInput(e.target.value)}
+                  onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendChat(); } }}
+                  placeholder="펠리카에게 물어봐요..."
+                  style={{flex:1,background:"rgba(232,216,0,0.06)",border:"1px solid rgba(232,216,0,0.25)",color:"#f0ede8",fontSize:"11px",padding:"8px 10px",fontFamily:"monospace",outline:"none"}}
+                />
+                <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()}
+                  style={{padding:"8px 12px",background:chatLoading||!chatInput.trim()?"transparent":"rgba(232,216,0,0.15)",border:"1px solid rgba(232,216,0,"+(chatLoading||!chatInput.trim()?"0.15":"0.5")+")",color:chatLoading||!chatInput.trim()?"rgba(232,216,0,0.3)":"#E8D800",cursor:chatLoading||!chatInput.trim()?"not-allowed":"pointer",fontSize:"12px",fontFamily:"monospace"}}>
+                  ↑
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <style>{`
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        @keyframes chatDot{0%,100%{opacity:0.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
         @keyframes pulseYellow{0%,100%{opacity:1;box-shadow:0 0 8px #E8D800}50%{opacity:0.4;box-shadow:0 0 16px #E8D800}}
         @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
         *{box-sizing:border-box}
