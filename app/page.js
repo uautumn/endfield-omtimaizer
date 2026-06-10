@@ -178,7 +178,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error||"오류");
-      setChatMessages(prev=>[...prev,{role:"assistant",content:data.reply,usedGuides:data.usedGuides}]);
+      setChatMessages(prev=>[...prev,{role:"assistant",content:data.reply,usedGuides:data.usedGuides,usedSearch:data.usedSearch}]);
     } catch(e) {
       setChatMessages(prev=>[...prev,{role:"assistant",content:"앗, 오류가 났어요 ㅠ 다시 시도해봐요!",usedGuides:false}]);
     }
@@ -589,7 +589,7 @@ export default function Home() {
                 </div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:"11px",fontWeight:"bold",color:"#E8D800",letterSpacing:"0.06em"}}>Perlica</div>
-                  <div style={{fontSize:"8px",color:"rgba(232,216,0,0.5)",letterSpacing:"0.1em"}}>{chatLoading?"THINKING...":"ONLINE ✦"}</div>
+                  <div style={{fontSize:"8px",color:"rgba(232,216,0,0.5)",letterSpacing:"0.1em"}}>{chatLoading?"SEARCHING & THINKING...":"ONLINE ✦"}</div>
                 </div>
                 <button onClick={()=>setChatOpen(false)}
                   style={{background:"transparent",border:"none",color:"rgba(232,216,0,0.5)",cursor:"pointer",fontSize:"16px",padding:"0",lineHeight:1}}>✕</button>
@@ -605,7 +605,10 @@ export default function Home() {
                           style={{width:"22px",height:"22px",objectFit:"cover",flexShrink:0,border:"1px solid rgba(232,216,0,0.4)",clipPath:"polygon(0 0,calc(100%-3px) 0,100% 3px,100% 100%,3px 100%,0 calc(100%-3px))"}}/>
                         <div style={{background:"rgba(232,216,0,0.08)",border:"1px solid rgba(232,216,0,0.2)",padding:"8px 10px",fontSize:"11px",color:"#f0ede8",lineHeight:"1.7",clipPath:"polygon(0 0,calc(100%-6px) 0,100% 6px,100% 100%,0 100%)"}}>
                           {msg.content}
-                          {msg.usedGuides && <div style={{fontSize:"8px",color:"rgba(30,200,160,0.7)",marginTop:"4px"}}>✦ 공략 DB 참고</div>}
+                          <div style={{display:"flex",gap:"6px",marginTop:"4px",flexWrap:"wrap"}}>
+                            {msg.usedGuides && <span style={{fontSize:"8px",color:"rgba(30,200,160,0.7)"}}>✦ 공략 DB</span>}
+                            {msg.usedSearch && <span style={{fontSize:"8px",color:"rgba(100,180,255,0.8)"}}>🔍 웹 검색</span>}
+                          </div>
                         </div>
                       </div>
                     )}
