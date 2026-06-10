@@ -289,9 +289,7 @@ export default function Home() {
         <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.012) 3px,rgba(255,255,255,0.012) 4px)"}}/>
       </div>
 
-      <div style={{position:"relative",zIndex:1,maxWidth:"1280px",margin:"0 auto",padding:"0 0 64px",display:"flex",gap:"0",alignItems:"flex-start"}}>
-        {/* ── 메인 콘텐츠 ── */}
-        <div style={{flex:1,minWidth:0,maxWidth:"880px"}}>
+      <div style={{position:"relative",zIndex:1,maxWidth:"880px",margin:"0 auto",padding:"0 0 64px",transition:"margin-right 0.3s ease",...(chatOpen?{marginRight:"340px"}:{})}}>
 
         {/* ── 펠리카 헤더 — 퍼스널 컬러 (전기/옐로) ── */}
         <div style={{padding:"28px 20px 20px",borderBottom:"1px solid "+T.accentBd,marginBottom:"16px",position:"relative",overflow:"hidden"}}>
@@ -563,13 +561,11 @@ export default function Home() {
               <span style={{fontSize:"8px",color:"rgba(255,255,255,0.15)",letterSpacing:"0.12em"}}>TALOS-II</span>
             </div>
           </div>
-        </div>
-        </div>
+      </div>
 
-        {/* ── 펠리카 챗봇 사이드 패널 ── */}
-        <div style={{width:"340px",flexShrink:0,position:"sticky",top:"20px",height:"calc(100vh - 40px)",display:"flex",flexDirection:"column",marginLeft:"12px",zIndex:10}}>
-
-          {/* 챗봇 토글 버튼 (닫혔을 때) */}
+      {/* ── 펠리카 챗봇 (fixed 오버레이) ── */}
+      <div>
+          {/* 챗봇 토글 버튼 (항상 우하단 고정) */}
           {!chatOpen && (
             <button onClick={()=>setChatOpen(true)}
               style={{position:"fixed",right:"16px",bottom:"24px",width:"56px",height:"56px",borderRadius:"50%",background:"linear-gradient(135deg,#E8D800,#b8a800)",border:"none",cursor:"pointer",boxShadow:"0 0 20px rgba(232,216,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}}>
@@ -645,7 +641,7 @@ export default function Home() {
               </div>
             </div>
           )}
-        </div>
+      </div>
       </div>
 
       <style>{`
