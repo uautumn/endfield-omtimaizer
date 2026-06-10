@@ -41,53 +41,43 @@ function GuideCard({ guide, onEdit, onDelete }) {
   const regionColor = guide.region === "4번 협곡" ? "#FF6B00" : guide.region === "무릉" ? "#1ec8a0" : "#94A3B8";
   return (
     <div style={{ background: C.bg2, border: "1px solid " + C.mintBd, clipPath: CP8, overflow: "hidden" }}>
-      <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
-        <div onClick={() => setOpen(!open)} style={{ flex: 1, cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
-        {/* 이미지 썸네일 */}
+      {/* 헤더 */}
+      <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
         {guide.image_url && (
-          <img src={guide.image_url} alt="공략 이미지"
-            style={{ width: "48px", height: "48px", objectFit: "cover", flexShrink: 0,
-              border: "1px solid " + regionColor + "55",
-              clipPath: "polygon(0 0,calc(100%-4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100%-4px))" }} />
+          <img src={guide.image_url} alt="공략 이미지" style={{ width: "48px", height: "48px", objectFit: "cover", flexShrink: 0, border: "1px solid " + regionColor + "55", clipPath: "polygon(0 0,calc(100%-4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100%-4px))" }} />
         )}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-            <span style={{ fontSize: "9px", padding: "2px 7px", border: "1px solid " + regionColor + "55", color: regionColor }}>
-              {guide.region}
-            </span>
+        <div onClick={() => setOpen(!open)} style={{ flex: 1, cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "9px", padding: "2px 7px", border: "1px solid " + regionColor + "55", color: regionColor }}>{guide.region}</span>
             <span style={{ fontSize: "12px", color: C.text, fontWeight: "600" }}>{guide.title}</span>
-            {guide.image_url && (
-              <span style={{ fontSize: "8px", color: C.mint, border: "1px solid " + C.mintBd, padding: "1px 5px" }}>📷 이미지</span>
-            )}
+            {guide.image_url && <span style={{ fontSize: "8px", color: C.mint, border: "1px solid " + C.mintBd, padding: "1px 5px" }}>📷 이미지</span>}
           </div>
-          <div style={{ fontSize: "9px", color: C.sub }}>
-            by {guide.author || "익명"} · {new Date(guide.created_at).toLocaleDateString("ko-KR")}
-          </div>
+          <div style={{ fontSize: "9px", color: C.sub }}>by {guide.author || "익명"} · {new Date(guide.created_at).toLocaleDateString("ko-KR")}</div>
         </div>
-        <span style={{ fontSize: "10px", color: C.sub, flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+          <span onClick={() => setOpen(!open)} style={{ fontSize: "10px", color: C.sub, cursor: "pointer", padding: "0 4px" }}>{open ? "▲" : "▼"}</span>
+          <button onClick={() => onEdit && onEdit(guide)} style={{ fontSize: "9px", padding: "3px 8px", border: "1px solid " + C.mintBd, background: "transparent", color: C.mint, cursor: "pointer", fontFamily: "monospace" }}>수정</button>
+          <button onClick={() => { if(window.confirm("정말 삭제할까요?")) onDelete && onDelete(guide.id); }} style={{ fontSize: "9px", padding: "3px 8px", border: "1px solid #ff444444", background: "transparent", color: "#ff6666", cursor: "pointer", fontFamily: "monospace" }}>삭제</button>
+        </div>
       </div>
-
+      {/* 본문 */}
       {open && (
         <div style={{ borderTop: "1px solid " + C.dim }}>
-          {/* 이미지 크게 보기 */}
           {guide.image_url && (
             <div style={{ padding: "12px 14px 0" }}>
               <div style={{ fontSize: "8px", color: C.sub, letterSpacing: "0.12em", marginBottom: "6px" }}>// FACTORY LAYOUT</div>
-              <img src={guide.image_url} alt="공장 설계도"
-                style={{ width: "100%", maxHeight: "300px", objectFit: "contain",
-                  border: "1px solid " + C.mintBd, background: "#030810" }} />
+              <img src={guide.image_url} alt="공장 설계도" style={{ width: "100%", maxHeight: "300px", objectFit: "contain", border: "1px solid " + C.mintBd, background: "#030810" }} />
             </div>
           )}
           <div style={{ padding: "10px 14px 14px" }}>
-            <p style={{ margin: 0, fontSize: "12px", color: C.text, lineHeight: "1.9", whiteSpace: "pre-wrap", fontFamily: "monospace" }}>
-              {guide.content}
-            </p>
+            <p style={{ margin: 0, fontSize: "12px", color: C.text, lineHeight: "1.9", whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{guide.content}</p>
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 export default function GuidesPage() {
   const [tab, setTab] = useState("list");
