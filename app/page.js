@@ -124,6 +124,7 @@ export default function Home() {
   const [result,setResult] = useState(null);
   const [error,setError] = useState(null);
   const [usedGuides,setUsedGuides] = useState(false);
+  const [usedSearch,setUsedSearch] = useState(false);
   const [guideImages,setGuideImages] = useState([]);
   const [chatOpen,setChatOpen] = useState(false);
   const [chatMessages,setChatMessages] = useState([
@@ -186,7 +187,7 @@ export default function Home() {
   };
 
   const doAnalyze = async () => {
-    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]);
+    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false);
     setMood("analyzing"); setMsg(rnd(MSGS.analyzing));
     let s=0;
     const timer=setInterval(()=>{ s=Math.min(s+1,STEPS.length-1); setStep(s); },700);
@@ -215,6 +216,7 @@ export default function Home() {
       if (!text) throw new Error("응답이 비어있어요.");
       clearInterval(timer); setStep(STEPS.length-1);
       setUsedGuides(data.usedGuides || false);
+      setUsedSearch(data.usedSearch || false);
       setGuideImages(data.guideImages || []);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
@@ -518,7 +520,10 @@ export default function Home() {
                 </div>
                 <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:"8px"}}>
                   {usedGuides&&(
-                    <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(30,200,160,0.15)",border:"1px solid rgba(30,200,160,0.4)",color:"#1ec8a0",letterSpacing:"0.06em"}}>✦ 공략 DB 참고</span>
+                    <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(30,200,160,0.15)",border:"1px solid rgba(30,200,160,0.4)",color:"#1ec8a0",letterSpacing:"0.06em"}}>✦ 공략 DB</span>
+                  )}
+                  {usedSearch&&(
+                    <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(100,180,255,0.15)",border:"1px solid rgba(100,180,255,0.4)",color:"#64b4ff",letterSpacing:"0.06em"}}>🔍 웹 검색</span>
                   )}
                   <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
                     <div style={{width:"5px",height:"5px",background:"#4ecb80",boxShadow:"0 0 5px #4ecb80"}}/>
