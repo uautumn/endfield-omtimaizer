@@ -168,7 +168,6 @@ export default function Home() {
   const [usedGuides,setUsedGuides] = useState(false);
   const [usedSearch,setUsedSearch] = useState(false);
   const [guideImages,setGuideImages] = useState([]);
-  const [detectedRegion,setDetectedRegion] = useState(null);
   const [chatOpen,setChatOpen] = useState(false);
   const [chatChar,setChatChar] = useState("perlica");
   const chatCharData = CHARACTERS[chatChar];
@@ -245,7 +244,7 @@ export default function Home() {
   };
 
   const doAnalyze = async () => {
-    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false); setDetectedRegion(null);
+    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false);
     setMood("analyzing"); setMsg(rnd(MSGS.analyzing));
     let s=0;
     const timer=setInterval(()=>{ s=Math.min(s+1,STEPS.length-1); setStep(s); },700);
@@ -276,8 +275,6 @@ export default function Home() {
       setUsedGuides(data.usedGuides || false);
       setUsedSearch(data.usedSearch || false);
       setGuideImages(data.guideImages || []);
-      setDetectedRegion(data.detectedRegion || null);
-      console.log("[DEBUG] detectedRegion:", data.detectedRegion, "/ 선택된 탭 region:", region, "/ detectDebug:", data.detectDebug);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
       clearInterval(timer); setError(e.message); setAnalyzing(false); setMood("idle"); setMsg(rnd(MSGS.idle));
@@ -584,9 +581,6 @@ export default function Home() {
                   )}
                   {usedSearch&&(
                     <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(100,180,255,0.15)",border:"1px solid rgba(100,180,255,0.4)",color:"#64b4ff",letterSpacing:"0.06em"}}>🔍 웹 검색</span>
-                  )}
-                  {detectedRegion&&detectedRegion!==region&&(
-                    <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(255,180,0,0.15)",border:"1px solid rgba(255,180,0,0.4)",color:"#ffb400",letterSpacing:"0.06em"}}>⚠ 스크린샷은 {detectedRegion}으로 보여요</span>
                   )}
                   <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
                     <div style={{width:"5px",height:"5px",background:"#4ecb80",boxShadow:"0 0 5px #4ecb80"}}/>
