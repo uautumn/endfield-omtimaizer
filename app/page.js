@@ -168,6 +168,7 @@ export default function Home() {
   const [usedGuides,setUsedGuides] = useState(false);
   const [usedSearch,setUsedSearch] = useState(false);
   const [guideImages,setGuideImages] = useState([]);
+  const [detectedRegion,setDetectedRegion] = useState(null);
   const [chatOpen,setChatOpen] = useState(false);
   const [chatChar,setChatChar] = useState("perlica");
   const chatCharData = CHARACTERS[chatChar];
@@ -244,7 +245,7 @@ export default function Home() {
   };
 
   const doAnalyze = async () => {
-    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false);
+    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false); setDetectedRegion(null);
     setMood("analyzing"); setMsg(rnd(MSGS.analyzing));
     let s=0;
     const timer=setInterval(()=>{ s=Math.min(s+1,STEPS.length-1); setStep(s); },700);
@@ -275,6 +276,7 @@ export default function Home() {
       setUsedGuides(data.usedGuides || false);
       setUsedSearch(data.usedSearch || false);
       setGuideImages(data.guideImages || []);
+      setDetectedRegion(data.detectedRegion || null);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
       clearInterval(timer); setError(e.message); setAnalyzing(false); setMood("idle"); setMsg(rnd(MSGS.idle));
@@ -582,6 +584,9 @@ export default function Home() {
                   {usedSearch&&(
                     <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(100,180,255,0.15)",border:"1px solid rgba(100,180,255,0.4)",color:"#64b4ff",letterSpacing:"0.06em"}}>🔍 웹 검색</span>
                   )}
+                  {detectedRegion&&detectedRegion!==region&&(
+                    <span style={{fontSize:"8px",padding:"2px 7px",background:"rgba(255,180,0,0.15)",border:"1px solid rgba(255,180,0,0.4)",color:"#ffb400",letterSpacing:"0.06em"}}>⚠ 스크린샷은 {detectedRegion}으로 보여요</span>
+                  )}
                   <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
                     <div style={{width:"5px",height:"5px",background:"#4ecb80",boxShadow:"0 0 5px #4ecb80"}}/>
                     <span style={{fontSize:"8px",color:"#4ecb80",letterSpacing:"0.1em"}}>COMPLETE</span>
@@ -638,10 +643,10 @@ export default function Home() {
           {/* 챗봇 패널 */}
           {chatOpen && (
             <div style={{position:"fixed",right:"16px",bottom:"16px",width:"340px",height:"560px",background:"rgba(3,8,15,0.96)",border:`1px solid rgba(${chatAccentRgb},0.4)`,clipPath:"polygon(0 0,calc(100%-12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100%-12px))",display:"flex",flexDirection:"column",zIndex:100,boxShadow:`0 0 30px rgba(${chatAccentRgb},0.15)`,backdropFilter:"blur(12px)",overflow:"hidden"}}>
-              {/* 펠리카 일러스트 배경 */}
+              {/* 캐릭터 일러스트 배경 */}
               <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none"}}>
                 <img src={chatCharData.images.illustration} alt=""
-                  style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",height:"80%",width:"auto",objectFit:"contain",objectPosition:"bottom center",opacity:0.15,filter:"saturate(0.8)"}}/>
+                  style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:0.15,filter:"saturate(0.8)"}}/>
               </div>
 
               {/* 챗봇 헤더 */}

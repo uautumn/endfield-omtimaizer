@@ -4,17 +4,62 @@ export async function POST(req) {
     const body = await req.json();
     const { messages, system, model, max_tokens, searchQuery, region } = body;
 
+    // 0. 스크린샷이 있으면 이미지로 지역(4번 협곡/무릉) 자동 판별
+    let detectedRegion = null;
+    const imageBlocks = (messages?.[0]?.content || []).filter(b => b.type === "image");
+    if (imageBlocks.length > 0) {
+      try {
+        const detectRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5",
+            max_tokens: 10,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  ...imageBlocks,
+                  {
+                    type: "text",
+                    text: "이 스크린샷은 명일방주: 엔드필드의 어느 지역 공장이야? '4번 협곡' 또는 '무릉' 중 하나로만 답해. 판단이 어려우면 '불명'이라고 답해.",
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+        const detectData = await detectRes.json();
+        const raw = detectData?.content?.find(b => b.type === "text")?.text?.trim() || "";
+        if (raw.includes("무릉")) detectedRegion = "무릉";
+        else if (raw.includes("4번") || raw.includes("협곡")) detectedRegion = "4번 협곡";
+      } catch (e) {
+        console.error("지역 판별 실패:", e.message);
+      }
+    }
+
+    // 공략 DB 검색에 사용할 지역: 스크린샷에서 판별된 지역 우선, 실패 시 선택된 탭의 지역 사용
+    const effectiveRegion = detectedRegion || region;
+
     // 1. 관련 공략글 검색 (RAG)
     let guideContext = "";
     let guideImages = [];
     if (searchQuery) {
       try {
+        // 지역명이 포함된 검색어는 판별된 지역으로 맞춰서 보정
+        const adjustedQuery = (region && effectiveRegion && region !== effectiveRegion)
+          ? searchQuery.replace(region, effectiveRegion)
+          : searchQuery;
         const searchRes = await fetch(
           "https://endfield-omtimaizer.vercel.app/api/search",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: searchQuery, region, limit: 3 }),
+            body: JSON.stringify({ query: adjustedQuery, region: effectiveRegion, limit: 3 }),
           }
         );
         const searchData = await searchRes.json();
@@ -90,6 +135,7 @@ export async function POST(req) {
       usedGuides: !!guideContext,
       usedSearch: !!usedSearch,
       guideImages,
+      detectedRegion,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
