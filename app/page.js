@@ -277,6 +277,7 @@ export default function Home() {
       setUsedSearch(data.usedSearch || false);
       setGuideImages(data.guideImages || []);
       setDetectedRegion(data.detectedRegion || null);
+      console.log("[DEBUG] detectedRegion:", data.detectedRegion, "/ 선택된 탭 region:", region);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
       clearInterval(timer); setError(e.message); setAnalyzing(false); setMood("idle"); setMsg(rnd(MSGS.idle));
