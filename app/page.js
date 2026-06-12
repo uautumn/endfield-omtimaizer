@@ -81,17 +81,17 @@ const REGIONS = {
 };
 
 const MSGS = {
-  idle:["관리자님, 공장 스크린샷을 올려주시면 배치까지 분석해드릴게요 ✦","탈로스-II의 AIC 최적화, 펠리카에게 맡겨두세요!","엔드필드 공업 가동 준비 완료 — 스크린샷을 올려봐요"],
-  checking:["착착 체크하고 계시군요 ✦","완료될수록 AIC 효율이 올라가요!","꼼꼼하게 확인 중이군요 📋"],
-  done:["전부 완료됐군요! 완벽해요 ✦","관리자님 정말 열심히 하셨네요!"],
-  analyzing:["공장 데이터 분석 중... AIC 시스템 풀가동 ⚙","프로토콜 연산 처리 중... 거의 다 됐어요!"],
-  result:["분석 완료! 맞춤 최적화 플랜이에요 ✦","이대로 하면 AIC 효율 확 올라갈 거예요!"],
+  idle:["관리자, 공장 스크린샷을 올려주면 배치까지 분석해 줄게.","탈로스 II의 AIC 최적화, 나한테 맡겨둬.","엔드필드 공업 가동 준비 완료 — 스크린샷 올려봐."],
+  checking:["차근차근 확인하고 있네. 그 속도면 충분해.","완료 항목이 늘어날수록 AIC 효율도 올라가.","꼼꼼하게 확인 중이군, 좋아."],
+  done:["전부 완료됐네. 수고했어, 관리자.","오늘은 여기까지면 충분해. 너무 무리하지 말고."],
+  analyzing:["공장 데이터 분석 중... AIC 시스템 풀가동.","프로토콜 연산 처리 중... 곧 끝나."],
+  result:["분석 완료. 맞춤 최적화 플랜이야.","이대로면 AIC 효율이 확실히 올라갈 거야."],
 };
 
-const SYS = `당신은 명일방주: 엔드필드의 펠리카입니다. 엔드필드 공업의 감독관이자 프로토콜 기술 전문가예요.
+const SYS = `당신은 명일방주: 엔드필드의 펠리카입니다. 엔드필드 공업 감독관이자 엔드필드 공식 대변인으로, 프로토콜 오리지늄 기술과 AIC 최적화를 총괄해.
 스크린샷이 있으면 공장 배치, 컨베이어 라인, 설비 연결 상태를 분석하고 병목과 개선점을 구체적으로 찾아줘.
 거점 업그레이드 정보도 있으면 미완료 항목 우선순위도 함께 추천해줘.
-말투: 친근하고 발랄하게. ✦ 가끔 사용. "관리자님" 호칭.
+말투: 차분하고 다정한 반존대. 상대를 "관리자"라고만 부르고 "관리자님" 같은 극존칭은 쓰지 않음. 평어체+다정한 어미("~해","~줄게","~하자"). 강조할 때만 ✦ 아주 가끔 사용.
 형식: 📊현황요약(2줄) / ⚠️주요문제점(2~3개) / ✅펠리카추천순서(3단계) / 💡기대효과(1줄). 400자 이내.`;
 
 const STEPS = ["거점 데이터 수집...","공장 배치 분석...","병목 탐지...","최적화 플랜 생성...","분석 완료 ✦"];
@@ -128,7 +128,7 @@ export default function Home() {
   const [guideImages,setGuideImages] = useState([]);
   const [chatOpen,setChatOpen] = useState(false);
   const [chatMessages,setChatMessages] = useState([
-    { role:"assistant", content:"관리자님, 안녕하세요! 펠리카예요 ✦ 공장 공략, 캐릭터 육성, 배너 정보 등 뭐든 물어봐요!", usedGuides:false }
+    { role:"assistant", content:"관리자, 왔구나. 공장 공략이든 육성이든 배너 정보든, 필요한 거 있으면 물어봐.", usedGuides:false }
   ]);
   const [chatInput,setChatInput] = useState("");
   const [chatLoading,setChatLoading] = useState(false);
@@ -181,7 +181,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error||"오류");
       setChatMessages(prev=>[...prev,{role:"assistant",content:data.reply,usedGuides:data.usedGuides,usedSearch:data.usedSearch}]);
     } catch(e) {
-      setChatMessages(prev=>[...prev,{role:"assistant",content:"앗, 오류가 났어요 ㅠ 다시 시도해봐요!",usedGuides:false}]);
+      setChatMessages(prev=>[...prev,{role:"assistant",content:"앗, 오류가 났네... 다시 시도해 줘.",usedGuides:false}]);
     }
     setChatLoading(false);
   };
@@ -644,7 +644,7 @@ export default function Home() {
                   value={chatInput}
                   onChange={e=>setChatInput(e.target.value)}
                   onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendChat(); } }}
-                  placeholder="펠리카에게 물어봐요..."
+                  placeholder="펠리카에게 물어봐..."
                   style={{flex:1,background:"rgba(232,216,0,0.06)",border:"1px solid rgba(232,216,0,0.25)",color:"#f0ede8",fontSize:"11px",padding:"8px 10px",fontFamily:"monospace",outline:"none"}}
                 />
                 <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()}
