@@ -6,7 +6,8 @@ export async function POST(req) {
 
     // 0. 스크린샷이 있으면 이미지로 지역(4번 협곡/무릉) 자동 판별
     let detectedRegion = null;
-    const imageBlocks = (messages?.[0]?.content || []).filter(b => b.type === "image");
+    let detectDebug = null;
+    const imageBlocks = (Array.isArray(messages?.[0]?.content) ? messages[0].content : []).filter(b => b.type === "image");
     if (imageBlocks.length > 0) {
       try {
         const detectRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -35,11 +36,15 @@ export async function POST(req) {
         });
         const detectData = await detectRes.json();
         const raw = detectData?.content?.find(b => b.type === "text")?.text?.trim() || "";
+        detectDebug = { status: detectRes.status, raw, apiError: detectData?.error || null };
         if (raw.includes("무릉")) detectedRegion = "무릉";
         else if (raw.includes("4번") || raw.includes("협곡")) detectedRegion = "4번 협곡";
       } catch (e) {
         console.error("지역 판별 실패:", e.message);
+        detectDebug = { error: e.message };
       }
+    } else {
+      detectDebug = { skipped: "이미지 블록 없음", contentType: Array.isArray(messages?.[0]?.content) ? "array" : typeof messages?.[0]?.content };
     }
 
     // 공략 DB 검색에 사용할 지역: 스크린샷에서 판별된 지역 우선, 실패 시 선택된 탭의 지역 사용
@@ -136,6 +141,7 @@ export async function POST(req) {
       usedSearch: !!usedSearch,
       guideImages,
       detectedRegion,
+      detectDebug,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
