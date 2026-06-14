@@ -141,6 +141,7 @@ const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
 const allIds = rd => [...Object.values(rd.cores).flat(),...Object.values(rd.outposts).flat()];
 const CP16 = "polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))";
 const CP8  = "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))";
+const STORAGE_KEY = "endfield-aic-progress";
 
 export default function Home() {
   const initChecks = () => {
@@ -153,12 +154,29 @@ export default function Home() {
   };
 
   const [checks,setChecks] = useState(initChecks);
-  const [levels,setLevels] = useState({"4번 협곡":12,"무릉":15});
+  const [levels,setLevels] = useState({"4번 협곡":12,"무릉":18});
   const [region,setRegion] = useState("4번 협곡");
   const [mood,setMood] = useState("idle");
   const [msg,setMsg] = useState(null);
   const [mounted,setMounted] = useState(false);
-  useEffect(()=>{ setMounted(true); setMsg(rnd(MSGS.idle)); },[]);
+  useEffect(()=>{
+    setMounted(true); setMsg(rnd(MSGS.idle));
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (saved) {
+        if (saved.checks) setChecks(prev=>({...prev, ...saved.checks}));
+        if (saved.levels) setLevels(prev=>({...prev, ...saved.levels}));
+      }
+    } catch (e) { console.error("저장된 진행상황 불러오기 실패:", e); }
+  },[]);
+
+  // 체크리스트/레벨이 바뀔 때마다 localStorage에 저장 (최초 로드 이후에만)
+  useEffect(()=>{
+    if (!mounted) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ checks, levels }));
+    } catch (e) { console.error("진행상황 저장 실패:", e); }
+  },[checks, levels, mounted]);
   const [shots,setShots] = useState([]);
   const [dragOver,setDragOver] = useState(false);
   const [analyzing,setAnalyzing] = useState(false);
