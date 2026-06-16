@@ -132,7 +132,7 @@ export default function GuidesPage() {
         method: editId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editId
-          ? { id: editId, title: form.title, region: form.region, content: form.content, author: form.author }
+          ? { id: editId, title: form.title, region: form.region, content: form.content, author: form.author, sourceUrl: form.sourceUrl || null }
           : { ...form, imageData: image?.data || null, imageType: image?.type || null, sourceUrl: form.sourceUrl || null }
         ),
       });
@@ -200,7 +200,7 @@ export default function GuidesPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {guides.map(g => (
                   <GuideCard key={g.id} guide={g}
-                    onEdit={(g) => { setForm({ title:g.title, region:g.region, author:g.author, content:g.content, sourceUrl:"" }); setEditId(g.id); setTab("submit"); }}
+                    onEdit={(g) => { setForm({ title:g.title, region:g.region, author:g.author, content:g.content, sourceUrl:g.source_url||"" }); setEditId(g.id); setTab("submit"); }}
                     onDelete={async (id) => {
                       await fetch(`/api/guides?id=${id}`, { method: "DELETE" });
                       fetchGuides(filterRegion);

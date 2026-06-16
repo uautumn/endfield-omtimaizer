@@ -122,7 +122,7 @@ export async function GET(req) {
 
     let query = supabase
       .from("guides")
-      .select("id, title, region, author, created_at, content, image_url")
+      .select("id, title, region, author, created_at, content, image_url, source_url")
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -142,7 +142,7 @@ export async function GET(req) {
 // 공략글 수정
 export async function PUT(req) {
   try {
-    const { id, title, region, content, author } = await req.json();
+    const { id, title, region, content, author, sourceUrl } = await req.json();
     if (!id || !title || !content) {
       return Response.json({ error: "id, 제목, 내용은 필수예요." }, { status: 400 });
     }
@@ -165,7 +165,7 @@ export async function PUT(req) {
 
     const { data, error } = await supabase
       .from("guides")
-      .update({ title, region: region || "공통", content, author: author || "익명", embedding })
+      .update({ title, region: region || "공통", content, author: author || "익명", embedding, source_url: sourceUrl || null })
       .eq("id", id)
       .select("id, title, region, author, created_at")
       .single();
