@@ -102,7 +102,7 @@ export async function POST(req) {
         image_url: imageUrl,
         embedding,
       })
-      .select("id, title, region, author, created_at, image_url")
+      .select("id, title, region, author, created_at, content, image_url, source_url")
       .single();
 
     if (error) throw new Error(error.message);

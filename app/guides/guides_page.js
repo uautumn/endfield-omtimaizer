@@ -69,9 +69,24 @@ function GuideCard({ guide, onEdit, onDelete }) {
               <img src={guide.image_url} alt="공장 설계도" style={{ width: "100%", maxHeight: "300px", objectFit: "contain", border: "1px solid " + C.mintBd, background: "#030810" }} />
             </div>
           )}
-          <div style={{ padding: "10px 14px 14px" }}>
-            <p style={{ margin: 0, fontSize: "12px", color: C.text, lineHeight: "1.9", whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{guide.content}</p>
-          </div>
+          {guide.content && (
+            <div style={{ padding: "12px 14px 6px" }}>
+              <div style={{ fontSize: "8px", color: C.sub, letterSpacing: "0.12em", marginBottom: "6px" }}>// CONTENT</div>
+              <p style={{ margin: 0, fontSize: "12px", color: C.text, lineHeight: "1.9", whiteSpace: "pre-wrap", fontFamily: "monospace" }}>{guide.content}</p>
+            </div>
+          )}
+          {guide.source_url && (
+            <div style={{ padding: "6px 14px 14px" }}>
+              <div style={{ fontSize: "8px", color: C.sub, letterSpacing: "0.12em", marginBottom: "6px" }}>// SOURCE</div>
+              <a href={guide.source_url} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: "11px", color: C.mint, fontFamily: "monospace", wordBreak: "break-all", textDecoration: "none", borderBottom: "1px solid " + C.mintBd }}>
+                🔗 {guide.source_url}
+              </a>
+            </div>
+          )}
+          {!guide.content && !guide.source_url && !guide.image_url && (
+            <div style={{ padding: "14px", fontSize: "11px", color: C.sub, textAlign: "center" }}>내용 없음</div>
+          )}
         </div>
       )}
     </div>
