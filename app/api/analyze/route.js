@@ -1,3 +1,5 @@
+import { FACTORY_SYSTEM_PROMPT } from "../factory-prompt.js";
+
 // RAG + 웹 검색 버전
 export async function POST(req) {
   try {
@@ -35,10 +37,10 @@ export async function POST(req) {
       }
     }
 
-    // 2. 시스템 프롬프트 강화
+    // 2. 시스템 프롬프트 — factory-prompt.js의 전용 프롬프트 사용
     const enhancedSystem = guideContext
-      ? system + "\n\n위의 커뮤니티 공략글을 참고해서 더 구체적이고 게임 특화된 분석을 해줘. 공략 출처도 간략히 언급해줘.\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보도 찾아서 활용해줘."
-      : system + "\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보를 찾아서 분석에 활용해줘.";
+      ? FACTORY_SYSTEM_PROMPT + "\n\n위의 커뮤니티 공략글을 참고해서 더 구체적이고 게임 특화된 분석을 해줘. 공략 출처도 간략히 언급해줘.\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보도 찾아서 활용해줘."
+      : FACTORY_SYSTEM_PROMPT + "\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보를 찾아서 분석에 활용해줘.";
 
     // 3. Claude API 호출 — 웹 검색 툴 포함
     const res = await fetch("https://api.anthropic.com/v1/messages", {
