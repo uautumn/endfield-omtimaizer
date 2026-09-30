@@ -38,9 +38,14 @@ export async function POST(req) {
     }
 
     // 2. 시스템 프롬프트 — factory-prompt.js의 전용 프롬프트 사용
+    // 사용자가 선택한 지역 탭을 프롬프트에 주입
+    const regionNote = region
+      ? `\n\n⚠️ 중요: 이 스크린샷은 사용자가 선택한 [${region}] 지역의 공장이야. 반드시 ${region} 지역 기준으로만 분석하고 레이아웃을 제안해줘. 다른 지역 레이아웃은 출력하지 마.`
+      : "";
+
     const enhancedSystem = guideContext
-      ? FACTORY_SYSTEM_PROMPT + "\n\n위의 커뮤니티 공략글을 참고해서 더 구체적이고 게임 특화된 분석을 해줘. 공략 출처도 간략히 언급해줘.\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보도 찾아서 활용해줘."
-      : FACTORY_SYSTEM_PROMPT + "\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보를 찾아서 분석에 활용해줘.";
+      ? FACTORY_SYSTEM_PROMPT + regionNote + "\n\n위의 커뮤니티 공략글을 참고해서 더 구체적이고 게임 특화된 분석을 해줘. 공략 출처도 간략히 언급해줘.\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보도 찾아서 활용해줘."
+      : FACTORY_SYSTEM_PROMPT + regionNote + "\n\n필요하면 웹 검색으로 최신 엔드필드 공략 정보를 찾아서 분석에 활용해줘.";
 
     // 3. Claude API 호출 — 웹 검색 툴 포함
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -49,18 +54,11 @@ export async function POST(req) {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
-        "anthropic-beta": "prompt-caching-2024-07-31",
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
         max_tokens: max_tokens || 3000,
-        system: [
-          {
-            type: "text",
-            text: enhancedSystem,
-            cache_control: { type: "ephemeral" }
-          }
-        ],
+        system: enhancedSystem,
         tools: [
           {
             type: "web_search_20250305",
