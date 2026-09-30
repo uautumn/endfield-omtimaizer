@@ -282,7 +282,7 @@ export default function Home() {
       ).join(" ");
       const searchQuery = region + " " + undoneLabels + " 공장 최적화";
 
-      const res = await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:1024,system:SYS,messages:[{role:"user",content:userContent},],searchQuery,region})});
+      const res = await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:3000,system:SYS,messages:[{role:"user",content:userContent},],searchQuery,region})});
       const data = await res.json();
       if (!res.ok) throw new Error(data.error||"API 오류 ("+res.status+")");
       const text = data.content&&data.content.find(b=>b.type==="text")&&data.content.find(b=>b.type==="text").text;
