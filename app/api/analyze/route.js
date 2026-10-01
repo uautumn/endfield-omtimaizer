@@ -81,8 +81,22 @@ export async function POST(req) {
 
     // 텍스트 블록만 추출
     const textBlocks = data.content?.filter(b => b.type === "text") || [];
-    const text = textBlocks.map(b => b.text).join("\n");
+    const fullText = textBlocks.map(b => b.text).join("\n");
     const usedSearch = data.content?.some(b => b.type === "tool_use" && b.name === "web_search");
+
+    // JSON 그리드 블록 파싱
+    let gridData = null;
+    let text = fullText;
+    const jsonMatch = fullText.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      try {
+        gridData = JSON.parse(jsonMatch[1]);
+        // 텍스트에서 JSON 블록 제거
+        text = fullText.replace(/```json[\s\S]*?```/, "").trim();
+      } catch (e) {
+        console.error("그리드 JSON 파싱 실패:", e.message);
+      }
+    }
 
     return Response.json({
       ...data,
@@ -90,6 +104,7 @@ export async function POST(req) {
       usedGuides: !!guideContext,
       usedSearch: !!usedSearch,
       guideImages,
+      gridData,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });

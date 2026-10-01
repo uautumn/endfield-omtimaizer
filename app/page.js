@@ -141,6 +141,18 @@ const CP16 = "polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 ca
 const CP8  = "polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))";
 const STORAGE_KEY = "endfield-aic-progress";
 
+// 설비 카테고리별 색상
+const CELL_COLORS = {
+  mining:     { bg: "rgba(232,180,0,0.2)",  border: "rgba(232,180,0,0.6)",  text: "#E8B400", label: "채집" },
+  production: { bg: "rgba(220,80,80,0.2)",  border: "rgba(220,80,80,0.6)",  text: "#E05555", label: "생산" },
+  synthesis:  { bg: "rgba(80,200,120,0.2)", border: "rgba(80,200,120,0.6)", text: "#4ecb80", label: "합성" },
+  logistics:  { bg: "rgba(80,150,255,0.2)", border: "rgba(80,150,255,0.6)", text: "#64b4ff", label: "물류" },
+  storage:    { bg: "rgba(160,120,255,0.2)",border: "rgba(160,120,255,0.6)",text: "#B088FF", label: "저장" },
+  power:      { bg: "rgba(255,200,50,0.2)", border: "rgba(255,200,50,0.6)", text: "#FFC832", label: "전력" },
+  belt:       { bg: "transparent",          border: "transparent",          text: "rgba(255,255,255,0.5)", label: "벨트" },
+  empty:      { bg: "transparent",          border: "transparent",          text: "transparent", label: "" },
+};
+
 export default function Home() {
   const initChecks = () => {
     const c={};
@@ -184,6 +196,7 @@ export default function Home() {
   const [usedGuides,setUsedGuides] = useState(false);
   const [usedSearch,setUsedSearch] = useState(false);
   const [guideImages,setGuideImages] = useState([]);
+  const [gridData,setGridData] = useState(null);
   const [chatOpen,setChatOpen] = useState(false);
   const [chatChar,setChatChar] = useState("perlica");
   const chatCharData = CHARACTERS[chatChar];
@@ -260,7 +273,7 @@ export default function Home() {
   };
 
   const doAnalyze = async () => {
-    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false);
+    setAnalyzing(true); setStep(0); setResult(null); setError(null); setGuideImages([]); setUsedSearch(false); setGridData(null);
     setMood("analyzing"); setMsg(rnd(MSGS.analyzing));
     let s=0;
     const timer=setInterval(()=>{ s=Math.min(s+1,STEPS.length-1); setStep(s); },700);
@@ -291,6 +304,7 @@ export default function Home() {
       setUsedGuides(data.usedGuides || false);
       setUsedSearch(data.usedSearch || false);
       setGuideImages(data.guideImages || []);
+      setGridData(data.gridData || null);
       setTimeout(()=>{ setResult(text); setAnalyzing(false); setMood("result"); setMsg(rnd(MSGS.result)); },400);
     } catch(e) {
       clearInterval(timer); setError(e.message); setAnalyzing(false); setMood("idle"); setMsg(rnd(MSGS.idle));
@@ -606,6 +620,57 @@ export default function Home() {
               </div>
               <div style={{padding:"14px 16px"}}>
                 <p style={{margin:0,fontSize:"12px",color:"#dde8e4",lineHeight:"2",whiteSpace:"pre-wrap",fontFamily:"monospace"}}>{result}</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── 최적화 그리드 레이아웃 ── */}
+          {gridData?.grid && (
+            <div style={{marginTop:"12px",background:"rgba(0,0,0,0.65)",border:"1px solid "+T.accentBd,clipPath:CP16,overflow:"hidden",backdropFilter:"blur(12px)"}}>
+              <div style={{padding:"8px 14px",borderBottom:"1px solid "+T.accentBd,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:"8px",color:T.accent,letterSpacing:"0.12em"}}>🗺️ // 최적화 레이아웃</span>
+                <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                  {Object.entries(CELL_COLORS).filter(([k])=>k!=="belt"&&k!=="empty").map(([k,v])=>(
+                    <div key={k} style={{display:"flex",alignItems:"center",gap:"3px"}}>
+                      <div style={{width:"8px",height:"8px",background:v.bg,border:"1px solid "+v.border}}/>
+                      <span style={{fontSize:"7px",color:v.text,letterSpacing:"0.06em"}}>{v.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{padding:"12px 14px",overflowX:"auto"}}>
+                <table style={{borderCollapse:"separate",borderSpacing:"3px",margin:"0 auto"}}>
+                  <tbody>
+                    {gridData.grid.map((row,ri)=>(
+                      <tr key={ri}>
+                        {row.map((cell,ci)=>{
+                          const category = gridData.legend?.[cell] || "empty";
+                          const color = CELL_COLORS[category] || CELL_COLORS.empty;
+                          const isBelt = category === "belt";
+                          const isEmpty = category === "empty" || cell === "";
+                          return (
+                            <td key={ci} style={{
+                              padding: isBelt||isEmpty ? "0 4px" : "5px 6px",
+                              background: color.bg,
+                              border: isEmpty ? "none" : `1px solid ${color.border}`,
+                              borderRadius: "2px",
+                              textAlign: "center",
+                              minWidth: isBelt ? "18px" : isEmpty ? "18px" : "52px",
+                              fontSize: isBelt ? "14px" : "9px",
+                              color: color.text,
+                              fontFamily: "monospace",
+                              letterSpacing: "0.04em",
+                              whiteSpace: "nowrap",
+                              verticalAlign: "middle",
+                            }}>
+                              {cell}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
