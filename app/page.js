@@ -24,7 +24,7 @@ const CHARACTERS = {
   ivon: {
     id: "ivon",
     name: "이본",
-    nameEn: "YVONNE",
+    nameEn: "IVON",
     tag: "[ 이본 ]",
     accent: "#FF4FA0",
     accentDark: "#B8005C",
@@ -219,6 +219,11 @@ export default function Home() {
   const [chatLoading,setChatLoading] = useState(false);
   const fileRef = useRef();
   const chatEndRef = useRef();
+
+  // 새 메시지가 올 때마다 자동 스크롤
+  useEffect(()=>{
+    chatEndRef.current?.scrollIntoView({ behavior:"smooth" });
+  },[chatMessages, chatLoading]);
 
   const T = THEME[region];
   const rdata = REGIONS[region];
