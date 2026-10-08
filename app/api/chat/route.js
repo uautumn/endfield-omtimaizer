@@ -201,9 +201,9 @@ export async function POST(req) {
     console.log("[chat] stop_reason:", data.stop_reason);
     console.log("[chat] content block types:", data.content?.map(b => b.type));
 
-    // 웹 검색 사용 여부: tool_use 블록 OR tool_result 블록이 있으면 검색한 것
+    // 웹 검색 사용 여부: 실제 블록 타입은 "server_tool_use", "web_search_tool_result"
     const usedSearch = data.content?.some(
-      b => b.type === "tool_use" || b.type === "tool_result"
+      b => b.type === "server_tool_use" || b.type === "web_search_tool_result"
     ) ?? false;
     console.log("[chat] usedSearch:", usedSearch, "/ usedGuides:", !!guideContext);
 
