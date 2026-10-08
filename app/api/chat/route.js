@@ -197,10 +197,15 @@ export async function POST(req) {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
 
+    // 디버그: 응답 content 블록 타입 목록 출력
+    console.log("[chat] stop_reason:", data.stop_reason);
+    console.log("[chat] content block types:", data.content?.map(b => b.type));
+
     // 웹 검색 사용 여부: tool_use 블록 OR tool_result 블록이 있으면 검색한 것
     const usedSearch = data.content?.some(
       b => b.type === "tool_use" || b.type === "tool_result"
     ) ?? false;
+    console.log("[chat] usedSearch:", usedSearch, "/ usedGuides:", !!guideContext);
 
     // 텍스트 블록만 추출 (tool_use, tool_result 블록 제외)
     const textBlocks = data.content?.filter(b => b.type === "text") || [];
