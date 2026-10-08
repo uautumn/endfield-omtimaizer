@@ -24,7 +24,7 @@ const CHARACTERS = {
   ivon: {
     id: "ivon",
     name: "이본",
-    nameEn: "IVON",
+    nameEn: "YVONNE",
     tag: "[ 이본 ]",
     accent: "#FF4FA0",
     accentDark: "#B8005C",
