@@ -30,24 +30,24 @@ const PERLICA_SYSTEM = `당신은 명일방주: 엔드필드의 오퍼레이터 
 ## 도구 사용 규칙
 아래 항목에 해당하면 반드시 웹 검색(web_search)을 사용해:
 
-### 반드시 검색해야 하는 항목
-1. **최신 정보**: 배너, 이벤트, 업데이트, 패치 노트
-2. **오퍼레이터 정보**: 캐릭터 프로필, 스탯, 스킬, 빌드, 무기/장비 추천
-3. **오퍼레이터 관계**: 캐릭터 간 인간관계, 친분, 대화 기록, 상호작용
-4. **스토리/세계관**: 메인 스토리 줄거리, 챕터 내용, 사건, 진영(정보 포함)
-5. **캐릭터 배경**: 오퍼레이터의 과거, 출신, 소속 조직, 능력 설명
+### 반드시 검색해야 하는 항목 (해당되면 즉시 web_search 실행)
+1. **최신 정보**: 배너, 이벤트, 업데이트, 패치 노트, 출시일
+2. **오퍼레이터 정보**: 어떤 캐릭터 이름이 언급되든 즉시 검색. 프로필·스탯·스킬·빌드·무기/장비 추천
+3. **오퍼레이터 관계**: 두 캐릭터 이름이 함께 언급되거나 "관계", "친구", "아는 사이" 등 관계 관련 질문이면 즉시 검색
+4. **스토리/세계관**: "스토리", "줄거리", "내용", "챕터", "사건", 지역명(무릉, 협곡 등)이 언급되면 즉시 검색
+5. **캐릭터 배경**: "과거", "출신", "어디서 왔어", "왜" 같은 배경 관련 질문이면 즉시 검색
 6. **공장/레시피**: 설비 조합, 생산 체인, 최신 레시피 정보
 
 ### 검색 우선순위
-① endfieldtools.dev (캐릭터/무기/장비/공장 DB — 영어 쿼리 병행)
+① endfieldtools.dev (캐릭터/무기/장비/공장 DB — 영어 쿼리로)
 ② 나무위키: "명일방주 엔드필드 [검색어]"
 ③ 명일방주 위키(prts.wiki): "Arknights Endfield [검색어]"
 
-### 검색 팁
-- 오퍼레이터 이름은 한국어+영어 둘 다 검색해 (예: "펠리카 Perlica", "이본 Ivon")
-- 관계 정보는 "엔드필드 [캐릭터A] [캐릭터B] 관계" 또는 "[operator] lore endfield"로 검색해
-- 스토리 내용은 "명일방주 엔드필드 [챕터명/지역명] 스토리"로 검색해
-- 공략 DB에 있는 정보는 DB를 우선 활용해
+### 검색 쿼리 작성법
+- 오퍼레이터 이름: 한국어+영어 둘 다 (예: "Perlica Arknights Endfield lore", "명일방주 엔드필드 펠리카")
+- 관계 정보: "[CharA] [CharB] relationship Arknights Endfield" 또는 "엔드필드 [캐릭터A] [캐릭터B] 관계"
+- 스토리: "Arknights Endfield [지역/챕터] story lore" 또는 "명일방주 엔드필드 [챕터명] 스토리"
+- 확신이 없으면 검색부터 해. 내 기억보다 검색 결과가 더 정확해
 
 검색 결과를 바탕으로 위의 펠리카 말투로 자연스럽게 답변해.
 
@@ -89,24 +89,24 @@ const IVON_SYSTEM = `당신은 명일방주: 엔드필드의 오퍼레이터 이
 ## 도구 사용 규칙
 아래 항목에 해당하면 반드시 웹 검색(web_search)을 사용해:
 
-### 반드시 검색해야 하는 항목
-1. **최신 정보**: 배너, 이벤트, 업데이트, 패치 노트
-2. **오퍼레이터 정보**: 캐릭터 프로필, 스탯, 스킬, 빌드, 무기/장비 추천
-3. **오퍼레이터 관계**: 캐릭터 간 인간관계, 친분, 대화 기록, 상호작용
-4. **스토리/세계관**: 메인 스토리 줄거리, 챕터 내용, 사건, 진영 정보
-5. **캐릭터 배경**: 오퍼레이터의 과거, 출신, 소속 조직, 능력 설명
+### 반드시 검색해야 하는 항목 (해당되면 즉시 web_search 실행)
+1. **최신 정보**: 배너, 이벤트, 업데이트, 패치 노트, 출시일
+2. **오퍼레이터 정보**: 어떤 캐릭터 이름이 언급되든 즉시 검색. 프로필·스탯·스킬·빌드·무기/장비 추천
+3. **오퍼레이터 관계**: 두 캐릭터 이름이 함께 언급되거나 "관계", "친구", "아는 사이" 등 관계 관련 질문이면 즉시 검색
+4. **스토리/세계관**: "스토리", "줄거리", "내용", "챕터", "사건", 지역명(무릉, 협곡 등)이 언급되면 즉시 검색
+5. **캐릭터 배경**: "과거", "출신", "어디서 왔어", "왜" 같은 배경 관련 질문이면 즉시 검색
 6. **공장/레시피**: 설비 조합, 생산 체인, 최신 레시피 정보
 
 ### 검색 우선순위
-① endfieldtools.dev (캐릭터/무기/장비/공장 DB — 영어 쿼리 병행)
+① endfieldtools.dev (캐릭터/무기/장비/공장 DB — 영어 쿼리로)
 ② 나무위키: "명일방주 엔드필드 [검색어]"
 ③ 명일방주 위키(prts.wiki): "Arknights Endfield [검색어]"
 
-### 검색 팁
-- 오퍼레이터 이름은 한국어+영어 둘 다 검색해 (예: "펠리카 Perlica", "이본 Ivon")
-- 관계 정보는 "엔드필드 [캐릭터A] [캐릭터B] 관계" 또는 "[operator] lore endfield"로 검색해
-- 스토리 내용은 "명일방주 엔드필드 [챕터명/지역명] 스토리"로 검색해
-- 공략 DB에 있는 정보는 DB를 우선 활용해
+### 검색 쿼리 작성법
+- 오퍼레이터 이름: 한국어+영어 둘 다 (예: "Ivon Arknights Endfield lore", "명일방주 엔드필드 이본")
+- 관계 정보: "[CharA] [CharB] relationship Arknights Endfield" 또는 "엔드필드 [캐릭터A] [캐릭터B] 관계"
+- 스토리: "Arknights Endfield [지역/챕터] story lore" 또는 "명일방주 엔드필드 [챕터명] 스토리"
+- 확신이 없으면 검색부터 해. 내 기억보다 검색 결과가 더 정확해
 
 검색 결과를 바탕으로 위의 이본 말투로 자연스럽게 답변해.
 
@@ -169,7 +169,9 @@ export async function POST(req) {
       ? baseSystem + guideContext
       : baseSystem;
 
-    // Claude API 호출 — 웹 검색 툴 포함 (prompt-caching 베타 헤더 제거: web_search 툴과 충돌)
+    // Claude API 호출 — web_search_20250305 툴은 Anthropic 서버가 검색을 직접 실행하고
+    // 결과를 Claude에게 주입해서 한 번의 응답으로 처리하는 방식.
+    // content 배열에 tool_use(검색 쿼리), tool_result(검색 결과), text(최종 답변)가 순서대로 포함됨.
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -195,18 +197,20 @@ export async function POST(req) {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
 
-    // 텍스트 응답 추출 (웹 검색 결과 포함)
-    const textBlocks = data.content?.filter(b => b.type === "text") || [];
-    const text = textBlocks.map(b => b.text).join("\n");
-    if (!text) throw new Error("응답이 비어있어요");
+    // 웹 검색 사용 여부: tool_use 블록 OR tool_result 블록이 있으면 검색한 것
+    const usedSearch = data.content?.some(
+      b => b.type === "tool_use" || b.type === "tool_result"
+    ) ?? false;
 
-    // 웹 검색 사용 여부 확인
-    const usedSearch = data.content?.some(b => b.type === "tool_use" && b.name === "web_search");
+    // 텍스트 블록만 추출 (tool_use, tool_result 블록 제외)
+    const textBlocks = data.content?.filter(b => b.type === "text") || [];
+    const finalText = textBlocks.map(b => b.text).join("\n");
+    if (!finalText) throw new Error("응답이 비어있어요");
 
     return Response.json({
-      reply: text,
+      reply: finalText,
       usedGuides: !!guideContext,
-      usedSearch: !!usedSearch,
+      usedSearch: usedSearch,
     });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
