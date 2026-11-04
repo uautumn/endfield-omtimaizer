@@ -18,7 +18,11 @@ const CHARACTERS = {
       result: "/characters/perlica/done.jpg",
       illustration: "/characters/perlica/illustration.jpg",
     },
-    greeting: "관리자, 왔구나. 공장 공략이든 육성이든 배너 정보든, 필요한 거 있으면 물어봐.",
+    greeting: [
+      "관리자, 왔구나. 공장 공략이든 육성이든 배너 정보든, 필요한 거 있으면 물어봐.",
+      "관리자, 안색이 좋아졌네. 요즘 잘 쉬고 있구나. 필요한 게 있으면 언제든지 나한테 말해 줘.",
+      "관리자, 정기적으로 건강검진 받는 거 잊지 마. 너무 무리하지 말고... 특히 오리지늄 아츠는 절대 과하게 쓰면 안 돼. 다른 오퍼레이터들이 델타 로봇 수리 부탁하더라도 꼭 거절해. 알겠지?",
+    ],
     placeholder: "펠리카에게 물어봐...",
   },
   ivon: {
@@ -36,7 +40,12 @@ const CHARACTERS = {
       result: "/characters/ivon/done.jpg",
       illustration: "/characters/ivon/illustration.jpg",
     },
-    greeting: "오, 관리자! 마침 잘 왔어. 공장이든 장비든 뭐든 물어봐, 내가 더 멋지게 손봐줄게!",
+    greeting: [
+      "오, 관리자! 마침 잘 왔어. 공장이든 장비든 뭐든 물어봐, 내가 더 멋지게 손봐줄게!",
+      "관리자, 오늘은 어디로 놀러갈까? 나 갈 데 엄청 많이 알거든~ 꽁꽁이도 같이 데려가자!",
+      "이제야 내 생각이 났구나? 으흠~ 무슨 큰일이라도 터진 거야? 뭐, 나한테 오는 건 언제나 환영이지만!",
+      "나 왔어! 설비 문제는 나한테 맡기라고. 디자인이랑 효율, 둘 다 잡아줄게. 삐삐, 준비됐지?",
+    ],
     placeholder: "이본한테 물어봐!",
   },
   si: {
@@ -54,7 +63,12 @@ const CHARACTERS = {
       result: "/characters/si/idle.webp",
       illustration: "/characters/si/illustration.jpg",
     },
-    greeting: "...관리자? 흥, 꼭 볼일 있을 때만 찾아오는 거 알지? 뭐, 왔으니까 물어봐.",
+    greeting: [
+      "...관리자? 흥, 꼭 볼일 있을 때만 찾아오는 거 알지? 뭐, 왔으니까 물어봐.",
+      "흥, 꼭 사고를 쳐야 내 생각이 나지? ...뭐, 왔으니까 말해봐. 들어는 줄게.",
+      "네가 고른 거야? 음... 덧칠을 좀 해야겠네. 이제 내 거니까, 도로 가져갈 생각은 하지 마. 고마워할 필요도 없어.",
+      "영감이 떠올랐어! 바보처럼 서 있지 말고 종이 좀 가져와 봐! 빨리, 이 감흥 사라지기 전에!",
+    ],
     placeholder: "사한테 물어봐...",
   },
   // 캐릭터 추가 시 여기에 동일한 형태로 항목을 추가하고,
@@ -223,7 +237,7 @@ export default function Home() {
   const chatAccentRgb = hexToRgb(chatAccent);
   const [chatMessagesByChar,setChatMessagesByChar] = useState(() => {
     const init = {};
-    Object.values(CHARACTERS).forEach(c=>{ init[c.id] = [{ role:"assistant", content:c.greeting, usedGuides:false }]; });
+    Object.values(CHARACTERS).forEach(c=>{ init[c.id] = [{ role:"assistant", content:Array.isArray(c.greeting)?rnd(c.greeting):c.greeting, usedGuides:false }]; });
     return init;
   });
   const chatMessages = chatMessagesByChar[chatChar];
