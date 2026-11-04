@@ -527,6 +527,35 @@ export default function Home() {
             ))}
           </div>
 
+          {/* ── 건설 레벨 ── */}
+          <div style={{display:"flex",alignItems:"center",padding:"8px 14px",marginBottom:"12px",
+            background:"rgba(0,0,0,0.45)",borderLeft:"2px solid "+T.accent,
+            borderBottom:"1px solid "+T.accentBd,backdropFilter:"blur(6px)"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:"8px",color:T.sub,letterSpacing:"0.15em",marginBottom:"1px"}}>// CONSTRUCTION LEVEL</div>
+              <div style={{fontSize:"10px",color:T.text}}>{T.label} · {T.sub_en}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+              <button onClick={()=>setLevels(p=>({...p,[region]:Math.max(0,p[region]-1)}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>−</button>
+              <span style={{fontSize:"32px",fontWeight:"bold",color:T.accent,width:"46px",textAlign:"center",textShadow:"0 0 12px "+T.accentGlow}}>{levels[region]}</span>
+              <button onClick={()=>setLevels(p=>({...p,[region]:p[region]+1}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>+</button>
+            </div>
+          </div>
+
+          {/* ── 일괄 버튼 ── */}
+          <div style={{display:"flex",gap:"6px",marginBottom:"12px"}}>
+            {[
+              [()=>{const ids=allIds(rdata);const ac=ids.every(u=>checks[u.id]);const next={...checks};ids.forEach(u=>{next[u.id]=!ac;});setChecks(next);const ad=Object.values(next).every(Boolean);setMood(ad?"done":ac?"idle":"checking");setMsg(rnd(ad?MSGS.done:ac?MSGS.idle:MSGS.checking));}, allIds(rdata).every(u=>checks[u.id])?"[ REGION RESET ]":"[ REGION ALL ]"],
+              [()=>{const all=Object.values(REGIONS).flatMap(r=>allIds(r));const ac=all.every(u=>checks[u.id]);const next={...checks};all.forEach(u=>{next[u.id]=!ac;});setChecks(next);setMood(ac?"idle":"done");setMsg(rnd(ac?MSGS.idle:MSGS.done));}, Object.values(REGIONS).flatMap(r=>allIds(r)).every(u=>checks[u.id])?"[ ALL RESET ]":"[ ALL COMPLETE ]"],
+            ].map(([fn,label],i)=>(
+              <button key={i} onClick={fn} style={{flex:1,padding:"7px",border:"1px solid "+(i===0?T.accentBd:"rgba(255,255,255,0.08)"),background:"rgba(0,0,0,0.35)",color:i===0?T.sub:T.dim,fontSize:"9px",cursor:"pointer",fontFamily:"monospace",letterSpacing:"0.06em",backdropFilter:"blur(4px)"}}>{label}</button>
+            ))}
+          </div>
+
+          {/* ── 업그레이드 블록 ── */}
+          {Object.entries(rdata.cores).map(([name,items])=><Block key={name} title={name} items={items} isCore={true}/>)}
+          {Object.entries(rdata.outposts).map(([name,items])=><Block key={name} title={name} items={items} isCore={false}/>)}
+
           {/* ── 스크린샷 업로드 ── */}
           <div onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)}
             onDrop={e=>{e.preventDefault();setDragOver(false);handleFiles(e.dataTransfer.files);}}
@@ -556,35 +585,6 @@ export default function Home() {
                 <div style={{fontSize:"9px",color:T.sub}}>+ ADD</div>
               </div>
             )}
-          </div>
-
-          {/* ── 건설 레벨 ── */}
-          <div style={{display:"flex",alignItems:"center",padding:"8px 14px",marginBottom:"12px",
-            background:"rgba(0,0,0,0.45)",borderLeft:"2px solid "+T.accent,
-            borderBottom:"1px solid "+T.accentBd,backdropFilter:"blur(6px)"}}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"8px",color:T.sub,letterSpacing:"0.15em",marginBottom:"1px"}}>// CONSTRUCTION LEVEL</div>
-              <div style={{fontSize:"10px",color:T.text}}>{T.label} · {T.sub_en}</div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-              <button onClick={()=>setLevels(p=>({...p,[region]:Math.max(0,p[region]-1)}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>−</button>
-              <span style={{fontSize:"32px",fontWeight:"bold",color:T.accent,width:"46px",textAlign:"center",textShadow:"0 0 12px "+T.accentGlow}}>{levels[region]}</span>
-              <button onClick={()=>setLevels(p=>({...p,[region]:p[region]+1}))} style={{width:"24px",height:"24px",border:"1px solid "+T.accentBd,background:"transparent",color:T.accent,fontSize:"16px",cursor:"pointer",lineHeight:1}}>+</button>
-            </div>
-          </div>
-
-          {/* ── 업그레이드 블록 ── */}
-          {Object.entries(rdata.cores).map(([name,items])=><Block key={name} title={name} items={items} isCore={true}/>)}
-          {Object.entries(rdata.outposts).map(([name,items])=><Block key={name} title={name} items={items} isCore={false}/>)}
-
-          {/* ── 일괄 버튼 ── */}
-          <div style={{display:"flex",gap:"6px",marginBottom:"12px"}}>
-            {[
-              [()=>{const ids=allIds(rdata);const ac=ids.every(u=>checks[u.id]);const next={...checks};ids.forEach(u=>{next[u.id]=!ac;});setChecks(next);const ad=Object.values(next).every(Boolean);setMood(ad?"done":ac?"idle":"checking");setMsg(rnd(ad?MSGS.done:ac?MSGS.idle:MSGS.checking));}, allIds(rdata).every(u=>checks[u.id])?"[ REGION RESET ]":"[ REGION ALL ]"],
-              [()=>{const all=Object.values(REGIONS).flatMap(r=>allIds(r));const ac=all.every(u=>checks[u.id]);const next={...checks};all.forEach(u=>{next[u.id]=!ac;});setChecks(next);setMood(ac?"idle":"done");setMsg(rnd(ac?MSGS.idle:MSGS.done));}, Object.values(REGIONS).flatMap(r=>allIds(r)).every(u=>checks[u.id])?"[ ALL RESET ]":"[ ALL COMPLETE ]"],
-            ].map(([fn,label],i)=>(
-              <button key={i} onClick={fn} style={{flex:1,padding:"7px",border:"1px solid "+(i===0?T.accentBd:"rgba(255,255,255,0.08)"),background:"rgba(0,0,0,0.35)",color:i===0?T.sub:T.dim,fontSize:"9px",cursor:"pointer",fontFamily:"monospace",letterSpacing:"0.06em",backdropFilter:"blur(4px)"}}>{label}</button>
-            ))}
           </div>
 
           {/* ── 분석 진행률 ── */}
