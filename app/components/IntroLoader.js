@@ -4,19 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import EndfieldLogo from "./EndfieldLogo";
 
 // 사이트에 처음 들어왔을 때 한 번만 보여주는 로딩 화면
-// - 진행률은 실제 로딩(페이지 load, 폰트, 배경 이미지)에 맞춰 올라감
+// - 4단계로 나눠서 단계마다 차오르고 → 잠깐 멈추고 → 로그에 [ OK ]가 찍히는 방식
+// - 마지막 단계는 실제 로딩(페이지 load, 폰트, 배경 이미지)이 끝나야 100%가 됨
 // - 같은 탭에서 다시 들어오면(sessionStorage) 바로 건너뜀
 //   → layout.js의 인라인 스크립트가 첫 화면이 그려지기 전에 숨겨줌
 const SEEN_KEY = "aic-intro-seen";
-const MIN_SHOW_MS = 1400; // 너무 빨리 사라져서 깜빡이는 느낌이 나지 않도록 최소 노출 시간
-const MAX_WAIT_MS = 6000; // 로딩이 늦어져도 이 시간이 지나면 강제로 진행
+const MAX_WAIT_MS = 7000; // 로딩이 늦어져도 이 시간이 지나면 강제로 진행
+const HOLD_MS = 450;      // 100%를 찍고 화면이 걷히기 전 잠깐 멈추는 시간
 const EXIT_MS = 600;      // 화면이 걷히는 애니메이션 길이 (globals.css와 맞춤)
+const FILL_RATIO = 0.6;   // 단계 시간 중 앞 60%는 차오르고, 나머지 40%는 멈춰 있음
 
-const STATUS = [
-  [30, "PROTOCOL SYNC", "프로토콜 동기화"],
-  [60, "LOADING AIC DATA", "AIC 설비 데이터 로드"],
-  [90, "LINKING OPERATORS", "오퍼레이터 연결"],
-  [101, "SYSTEM READY", "가동 준비 완료"],
+// 단계별 목표 %와 길이 (전체 약 2.8초 + 멈춤 + 걷힘)
+const STAGES = [
+  { to: 26,  ms: 650, en: "PROTOCOL SYNC",     ko: "프로토콜 동기화" },
+  { to: 53,  ms: 750, en: "LOADING AIC DATA",  ko: "AIC 설비 데이터 로드" },
+  { to: 81,  ms: 750, en: "LINKING OPERATORS", ko: "오퍼레이터 연결" },
+  { to: 100, ms: 650, en: "SYSTEM READY",      ko: "가동 준비 완료", waitLoad: true },
 ];
 
 function preloadImage(src) {
@@ -27,9 +30,12 @@ function preloadImage(src) {
   });
 }
 
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
 export default function IntroLoader() {
   const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState("boot"); // boot → exit → gone
+  const [stage, setStage] = useState(0);         // 지금 진행 중인 단계 (STAGES.length면 전부 완료)
+  const [phase, setPhase] = useState("boot");    // boot → exit → gone
   const rafRef = useRef(0);
 
   useEffect(() => {
@@ -42,10 +48,12 @@ export default function IntroLoader() {
     html.style.overflow = "hidden"; // 로딩 중 스크롤 잠금
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const start = performance.now();
     let loaded = false;
+    let idx = 0;
+    let from = 0;
+    let stageStart = performance.now();
+    let doneAt = 0;
     let finished = false;
-    let p = 0;
     let exitTimer = 0;
 
     Promise.all([
@@ -60,7 +68,6 @@ export default function IntroLoader() {
     const finish = () => {
       if (finished) return;
       finished = true;
-      setProgress(100);
       setPhase("exit");
       exitTimer = setTimeout(() => {
         setPhase("gone");
@@ -69,19 +76,32 @@ export default function IntroLoader() {
       }, reduceMotion ? 200 : EXIT_MS);
     };
 
-    const tick = () => {
-      const elapsed = performance.now() - start;
-      if (reduceMotion) {
-        // 움직임 줄이기 설정이면 숫자 애니메이션 없이 로딩만 기다림
-        if (loaded) return finish();
-      } else if (!loaded) {
-        p += (90 - p) * 0.025;            // 로딩 중엔 90%까지 천천히 다가감
-      } else {
-        p += Math.max(1.2, (100 - p) * 0.12); // 로딩 끝나면 100%까지 빠르게
+    const tick = (now) => {
+      // 모든 단계 완료 → 100%에서 잠깐 멈췄다가 화면 걷기
+      if (idx >= STAGES.length) {
+        if (now - doneAt >= HOLD_MS) return finish();
+        rafRef.current = requestAnimationFrame(tick);
+        return;
       }
-      p = Math.min(p, 100);
+
+      const s = STAGES[idx];
+      const t = Math.min(1, (now - stageStart) / (s.ms * FILL_RATIO));
+      let p = reduceMotion ? s.to : from + (s.to - from) * easeOut(t);
+
+      // 마지막 단계: 실제 로딩이 안 끝났으면 92%에서 기다림
+      const blocked = s.waitLoad && !loaded;
+      if (blocked) p = Math.min(p, s.to - 8);
       setProgress(Math.floor(p));
-      if (p >= 100 && elapsed >= MIN_SHOW_MS) return finish();
+
+      if (!blocked && now - stageStart >= s.ms) {
+        // 단계 완료 → 로그에 [ OK ] 표시하고 다음 단계로
+        setProgress(s.to);
+        from = s.to;
+        idx += 1;
+        stageStart = now;
+        setStage(idx);
+        if (idx >= STAGES.length) doneAt = now;
+      }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -95,8 +115,6 @@ export default function IntroLoader() {
   }, []);
 
   if (phase === "gone") return null;
-
-  const [, statusEn, statusKo] = STATUS.find(([max]) => progress < max) || STATUS[STATUS.length - 1];
 
   return (
     <div className={"intro" + (phase === "exit" ? " intro--exit" : "")} aria-hidden="true">
@@ -114,11 +132,28 @@ export default function IntroLoader() {
           <span className="intro__kicker">{"//"} 펠리카의</span>
           <span className="intro__name">AIC OPTIMIZER</span>
         </div>
-        <div className="intro__status">
-          <span className="intro__dot" />
-          <span className="intro__statusEn">{statusEn}</span>
-          <span className="intro__statusKo">{statusKo}</span>
+
+        {/* 단계별 부팅 로그: 진행 중 [ .. ] → 완료 [ OK ] */}
+        <div className="intro__log">
+          {STAGES.map((s, i) => {
+            const state = i < stage ? "is-done" : i === stage ? "is-active" : "";
+            return (
+              <div key={s.en} className={`intro__logRow ${i <= stage ? "is-on" : ""} ${state}`}>
+                <span className="intro__logTag">{i < stage ? "[ OK ]" : "[ .. ]"}</span>
+                <span className="intro__logEn">{s.en}</span>
+                <span className="intro__logKo">{s.ko}</span>
+              </div>
+            );
+          })}
         </div>
+
+        {/* 4칸 단계 바 */}
+        <div className="intro__steps">
+          {STAGES.map((s, i) => (
+            <span key={s.en} className={i < stage ? "is-done" : i === stage ? "is-active" : ""} />
+          ))}
+        </div>
+
         <div className="intro__tagline">TALOS-II {"//"} AUTOMATED INDUSTRY COMPLEX</div>
       </div>
 
