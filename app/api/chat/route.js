@@ -294,6 +294,12 @@ export async function POST(req) {
             type: "web_search_20250305",
             name: "web_search",
             max_uses: 3,
+            // 한국 사용자 기준으로 검색 → 한국어 결과(나무위키 등)가 우선 노출되도록 유도
+            user_location: {
+              type: "approximate",
+              country: "KR",
+              timezone: "Asia/Seoul",
+            },
           }
         ],
         messages: messages.slice(-10),
