@@ -1,9 +1,15 @@
 "use client";
 
 // 엔드필드 인더스트리 로고 (역삼각형 + 지형도 등고선 + ENDFIELD INDUSTRIES)
-// 이미지 대신 SVG로 그려서 어떤 크기에서도 선명하고, 등고선이 떠오르는 애니메이션이 가능함
+// 이미지 대신 SVG로 그려서 어떤 크기에서도 선명함
+//
+// 성능 메모 (크롬에서 끊김 방지):
+// - 무거운 등고선은 별도 SVG 레이어로 분리하고, 그 레이어 전체의 opacity만 애니메이션함
+//   → 브라우저가 GPU 합성으로 처리해서 매 프레임 SVG를 다시 그리지 않음
+// - 글자 뒤 선 지우기는 mask 대신 clipPath(띠 위/아래 사각형 2개)로 처리 → 훨씬 가벼움
+// - memo로 감싸서 부모(로딩 화면)가 다시 렌더링돼도 로고는 다시 그리지 않음
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 // ── 지형 높이 함수: 봉우리 두 개 + 잔물결 → 실제 지형도처럼 서로 안 겹치는 등고선이 나옴
 function height(x, y) {
@@ -26,11 +32,8 @@ function buildContours() {
     for (let i = 0; i <= N; i++) row.push(height(i * STEP, j * STEP));
     grid.push(row);
   }
-  const levels = [];
-  for (let lv = 0.1; lv < 1.5; lv += 0.05) levels.push(lv); // 봉우리 꼭대기까지 채워서 빈 구멍이 안 생기게
-
-  return levels.map((lv) => {
-    let d = "";
+  let d = "";
+  for (let lv = 0.1; lv < 1.5; lv += 0.05) { // 봉우리 꼭대기까지 채워서 빈 구멍이 안 생기게
     const lerp = (a, b) => (lv - a) / (b - a);
     for (let j = 0; j < N; j++) {
       for (let i = 0; i < N; i++) {
@@ -55,59 +58,68 @@ function buildContours() {
         }
       }
     }
-    return d;
-  });
+  }
+  return d; // 모든 등고선을 경로 하나로 합침 (DOM 요소 수 최소화)
 }
 
 const TRI = "40,62 360,62 200,338"; // 역삼각형
-const BAND = { x: 0, y: 150, w: 400, h: 100 }; // ENDFIELD 글자가 지나가는 띠 (이 영역은 선을 지움)
 
-export default function EndfieldLogo({ className = "" }) {
+// ENDFIELD 글자 띠(y 150~250)를 뺀 위/아래 영역 → 선이 글자 뒤로 끊겨 보이게 함
+function OutsideBand({ id }) {
+  return (
+    <clipPath id={id}>
+      <rect x="0" y="0" width="400" height="150" />
+      <rect x="0" y="250" width="400" height="150" />
+    </clipPath>
+  );
+}
+
+function EndfieldLogo({ className = "" }) {
   // 등고선은 계산량이 있어서 서버 HTML에 넣지 않고 브라우저에서 그림
-  const [contours, setContours] = useState([]);
+  const [contours, setContours] = useState("");
   useEffect(() => { setContours(buildContours()); }, []);
 
   return (
-    <svg className={className} viewBox="0 0 400 400" role="img" aria-label="Endfield Industries">
-      <defs>
-        <clipPath id="ef-tri">
-          <polygon points={TRI} />
-        </clipPath>
-        {/* 글자 띠 부분만 비워서 선이 글자 뒤로 끊겨 보이게 함 (배경색 박스 없이) */}
-        <mask id="ef-band" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400">
-          <rect width="400" height="400" fill="white" />
-          <rect x={BAND.x} y={BAND.y} width={BAND.w} height={BAND.h} fill="black" />
-        </mask>
-      </defs>
-
-      <g mask="url(#ef-band)">
-        {/* 바깥쪽 끊어진 삼각형 라인 */}
-        <g className="eflogo__frame" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M22 50 H120 M140 50 H162 M300 50 H378 L210 352" pathLength="1" />
-          <path d="M22 50 L70 133" pathLength="1" />
-          <path d="M196 357 L178 326" pathLength="1" />
-        </g>
-
-        {/* 삼각형 안 등고선 */}
-        <g clipPath="url(#ef-tri)">
-          <polygon points={TRI} className="eflogo__fill" />
-          <g className="eflogo__contours" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-            {contours.map((d, i) => (
-              <path key={i} d={d} style={{ animationDelay: `${i * 35}ms` }} />
-            ))}
+    <div className={`eflogo ${className}`} role="img" aria-label="Endfield Industries">
+      {/* 1층: 삼각형 채움 + 등고선 (무거움 → 레이어 통째로 페이드인만) */}
+      <svg className="eflogo__layer eflogo__contourLayer" viewBox="0 0 400 400" aria-hidden="true">
+        <defs>
+          <clipPath id="ef-tri"><polygon points={TRI} /></clipPath>
+          <OutsideBand id="ef-out-a" />
+        </defs>
+        <g clipPath="url(#ef-out-a)">
+          <g clipPath="url(#ef-tri)">
+            <polygon points={TRI} className="eflogo__fill" />
+            {contours && (
+              <path d={contours} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+            )}
           </g>
         </g>
-        <polygon points={TRI} fill="none" stroke="currentColor" strokeWidth="2.5" />
-      </g>
+      </svg>
 
-      <text x="200" y="222" textAnchor="middle" className="eflogo__word">ENDFIELD</text>
+      {/* 2층: 프레임, 삼각형 테두리, 글자 (가벼움 → 선 그리기 애니메이션 가능) */}
+      <svg className="eflogo__layer" viewBox="0 0 400 400" aria-hidden="true">
+        <defs><OutsideBand id="ef-out-b" /></defs>
+        <g clipPath="url(#ef-out-b)">
+          <g className="eflogo__frame" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 50 H120 M140 50 H162 M300 50 H378 L210 352" pathLength="1" />
+            <path d="M22 50 L70 133" pathLength="1" />
+            <path d="M196 357 L178 326" pathLength="1" />
+          </g>
+          <polygon points={TRI} fill="none" stroke="currentColor" strokeWidth="2.5" />
+        </g>
 
-      {/* — I N D U S T R I E S — */}
-      <g stroke="currentColor" strokeWidth="2">
-        <line x1="22" y1="244" x2="74" y2="244" />
-        <line x1="326" y1="244" x2="378" y2="244" />
-      </g>
-      <text x="200" y="250" textAnchor="middle" className="eflogo__subText">INDUSTRIES</text>
-    </svg>
+        <text x="200" y="222" textAnchor="middle" className="eflogo__word">ENDFIELD</text>
+
+        {/* — I N D U S T R I E S — */}
+        <g stroke="currentColor" strokeWidth="2">
+          <line x1="22" y1="244" x2="74" y2="244" />
+          <line x1="326" y1="244" x2="378" y2="244" />
+        </g>
+        <text x="200" y="250" textAnchor="middle" className="eflogo__subText">INDUSTRIES</text>
+      </svg>
+    </div>
   );
 }
+
+export default memo(EndfieldLogo);

@@ -55,7 +55,6 @@ html[data-intro-seen] .intro { display: none; }
   color: #f0ede8;
   font-family: monospace;
   overflow: hidden;
-  clip-path: inset(0 0 0 0);
 }
 
 /* 등고선 느낌의 배경 패턴 */
@@ -68,6 +67,7 @@ html[data-intro-seen] .intro { display: none; }
     repeating-radial-gradient(ellipse 50% 60% at 18% 78%, transparent 0 34px, rgba(255,255,255,0.025) 34px 35px),
     radial-gradient(ellipse 70% 60% at 50% 45%, rgba(232,216,0,0.05), transparent 70%);
   animation: introDrift 14s linear infinite alternate;
+  will-change: transform; /* 큰 배경을 GPU 레이어로 올려서 움직일 때 다시 그리지 않게 */
 }
 
 /* 엔드필드 UI 대각선 스트라이프 */
@@ -95,7 +95,8 @@ html[data-intro-seen] .intro { display: none; }
   background: #E8D800;
   box-shadow: 0 0 14px rgba(232,216,0,0.6);
   transform-origin: bottom;
-  transition: transform 0.12s linear;
+  transform: scaleY(0);
+  will-change: transform; /* 매 프레임 JS로 바뀌므로 transition 없이 GPU 레이어로 */
 }
 
 .intro__center {
@@ -114,8 +115,15 @@ html[data-intro-seen] .intro { display: none; }
 /* 엔드필드 로고 SVG (app/components/EndfieldLogo.js) */
 .intro__logo {
   width: clamp(200px, 42vw, 300px);
-  height: auto;
   color: #f4f1ea;
+}
+/* 로고는 SVG 2장을 겹친 구조: 아래 = 등고선(무거움), 위 = 프레임·글자(가벼움) */
+.eflogo { position: relative; aspect-ratio: 1 / 1; }
+.eflogo__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 .eflogo__fill { fill: #0b1016; }
@@ -133,18 +141,21 @@ html[data-intro-seen] .intro { display: none; }
   letter-spacing: 10px;
   fill: currentColor;
 }
-/* 프레임은 선이 그어지고, 등고선은 높이 순서대로 떠오름 */
+/* 프레임은 선이 그어지고, 등고선은 레이어째로 떠오름 */
 .eflogo__frame path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   animation: efDraw 0.8s cubic-bezier(.5,0,.2,1) forwards;
 }
-.eflogo__contours path {
+/* 등고선 레이어: opacity + transform만 움직임 → GPU 합성이라 크롬에서도 끊기지 않음 */
+.eflogo__contourLayer {
   opacity: 0;
-  animation: efRise 0.5s ease-out forwards;
+  transform: scale(0.97);
+  animation: efRise 1s cubic-bezier(.2,.8,.2,1) 0.15s forwards;
+  will-change: opacity, transform;
 }
 @keyframes efDraw { to { stroke-dashoffset: 0; } }
-@keyframes efRise { to { opacity: 1; } }
+@keyframes efRise { to { opacity: 1; transform: none; } }
 
 .intro__title {
   display: flex;
@@ -229,7 +240,7 @@ html[data-intro-seen] .intro { display: none; }
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
-.intro__pct span {
+.intro__pctSign {
   font-size: 0.42em;
   margin-left: 4px;
   letter-spacing: 0;
@@ -255,20 +266,20 @@ html[data-intro-seen] .intro { display: none; }
   opacity: 0;
 }
 
-/* 로딩 완료 → 아래에서 위로 화면이 걷히며 메인 화면이 바로 드러남 */
+/* 로딩 완료 → 로딩 화면이 위로 걷히며 메인 화면이 바로 드러남
+   (clip-path 애니메이션은 크롬에서 매 프레임 다시 그려서 끊김 → transform으로 처리) */
 .intro--exit {
   animation: introWipe 0.6s cubic-bezier(.76,0,.24,1) forwards;
+  will-change: transform;
+  pointer-events: none;
 }
 .intro--exit .intro__center { animation: introFlash 0.25s steps(2) both; }
-.intro--exit .intro__wipeLine { animation: introLine 0.6s cubic-bezier(.76,0,.24,1) forwards; }
+/* 걷히는 화면의 아래 끝에 붙어서 함께 올라가는 노란 스캔 라인 */
+.intro--exit .intro__wipeLine { opacity: 1; }
 
 @keyframes introWipe {
-  from { clip-path: inset(0 0 0 0); }
-  to   { clip-path: inset(0 0 100% 0); }
-}
-@keyframes introLine {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 1; transform: translateY(-100vh); }
+  from { transform: translateY(0); }
+  to   { transform: translateY(-100%); }
 }
 @keyframes introRise {
   from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
@@ -298,8 +309,8 @@ html[data-intro-seen] .intro { display: none; }
   .intro__logRow.is-active .intro__logTag, .intro__steps span.is-active { animation: none; }
   .intro__logRow { transition: none; }
   .eflogo__frame path { animation: none; stroke-dashoffset: 0; }
-  .eflogo__contours path { animation: none; opacity: 1; }
+  .eflogo__contourLayer { animation: none; opacity: 1; transform: none; }
   .intro--exit { animation: introFade 0.2s linear forwards; }
-  .intro--exit .intro__wipeLine { animation: none; }
+  .intro--exit .intro__wipeLine { opacity: 0; }
 }
 @keyframes introFade { to { opacity: 0; } }

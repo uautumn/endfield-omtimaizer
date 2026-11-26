@@ -33,12 +33,23 @@ function preloadImage(src) {
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
 export default function IntroLoader() {
-  const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState(0);         // 지금 진행 중인 단계 (STAGES.length면 전부 완료)
   const [phase, setPhase] = useState("boot");    // boot → exit → gone
   const rafRef = useRef(0);
+  // %와 세로 바는 매 프레임 바뀌므로 React state 대신 DOM을 직접 고침
+  // (state로 하면 매 프레임 로딩 화면 전체가 다시 렌더링돼서 크롬에서 끊김)
+  const numRef = useRef(null);
+  const railRef = useRef(null);
 
   useEffect(() => {
+    let lastShown = -1;
+    const setProgress = (v) => {
+      if (v === lastShown) return; // 숫자가 안 바뀐 프레임은 아무것도 안 건드림
+      lastShown = v;
+      if (numRef.current) numRef.current.textContent = String(v).padStart(2, "0");
+      if (railRef.current) railRef.current.style.transform = `scaleY(${v / 100})`;
+    };
+
     let seen = false;
     try { seen = sessionStorage.getItem(SEEN_KEY) === "1"; } catch {}
     if (seen) { setPhase("gone"); return; }
@@ -123,7 +134,7 @@ export default function IntroLoader() {
 
       {/* 좌측 세로 진행 바 */}
       <div className="intro__rail">
-        <div className="intro__railFill" style={{ transform: `scaleY(${progress / 100})` }} />
+        <div className="intro__railFill" ref={railRef} />
       </div>
 
       <div className="intro__center">
@@ -158,7 +169,7 @@ export default function IntroLoader() {
       </div>
 
       <div className="intro__pct">
-        {String(progress).padStart(2, "0")}<span>%</span>
+        <span ref={numRef}>00</span><span className="intro__pctSign">%</span>
       </div>
       <div className="intro__code">ENDFIELD INDUSTRIES · UNOFFICIAL FAN TOOL</div>
 
